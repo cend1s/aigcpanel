@@ -4,6 +4,7 @@ import { getNavTab, rememberNavTab } from "../lib/nav-memory";
 import { t } from "../lang";
 import Router from "../router";
 import {
+    MarketingApps,
     SoundToolApps,
     ToolApps,
     VideoProcessingApps,
@@ -14,6 +15,7 @@ import { testActionSet, testActionUnset } from "../utils/test";
 const tab = ref("");
 
 const groups = computed(() => [
+    { title: t("tool.marketing"), apps: MarketingApps },
     { title: t("general.model.group") || "通用", apps: GeneralApps },
     { title: t("tool.soundProcessing"), apps: SoundToolApps },
     { title: t("tool.imageGeneration"), apps: ToolApps },
@@ -21,6 +23,7 @@ const groups = computed(() => [
 ]);
 
 const allToolApps = [
+    ...MarketingApps,
     ...SoundToolApps,
     ...ToolApps,
     ...VideoProcessingApps,
@@ -31,8 +34,8 @@ const syncTab = () => {
     const next =
         (Router.currentRoute.value.query.tab as string) ||
         getNavTab("/tool") ||
-        "SoundAsr";
-    tab.value = allToolApps.some((a) => a.name === next) ? next : "SoundAsr";
+        "EcomCopy";
+    tab.value = allToolApps.some((a) => a.name === next) ? next : "EcomCopy";
 };
 
 watch(tab, (v) => {

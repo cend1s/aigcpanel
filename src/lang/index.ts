@@ -74,6 +74,9 @@ import videoMarkZhCN from "../pages/Apps/VideoMark/lang/zh-CN.json";
 import videoMergeEnUS from "../pages/Apps/VideoMerge/lang/en-US.json";
 import videoMergeZhCN from "../pages/Apps/VideoMerge/lang/zh-CN.json";
 
+import ecomCopyEnUS from "../pages/Apps/EcomCopy/lang/en-US.json";
+import ecomCopyZhCN from "../pages/Apps/EcomCopy/lang/zh-CN.json";
+
 let localeInit = false;
 export const defaultLocale = "zh-CN";
 
@@ -116,6 +119,7 @@ export const messageList = [
             ...videoKeepPartEnUS,
             ...videoMarkEnUS,
             ...videoMergeEnUS,
+            ...ecomCopyEnUS,
         },
     },
     {
@@ -156,6 +160,7 @@ export const messageList = [
             ...videoKeepPartZhCN,
             ...videoMarkZhCN,
             ...videoMergeZhCN,
+            ...ecomCopyZhCN,
         },
     },
 ];

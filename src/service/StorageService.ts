@@ -5,7 +5,8 @@ export type StorageBiz =
     | "LiveEvent"
     | "LiveTalk"
     | "LiveVoice"
-    | "SoundVoice";
+    | "SoundVoice"
+    | "Copywriting";
 
 export type StorageRecord = {
     id?: number;

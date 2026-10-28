@@ -15,9 +15,10 @@ export class MockProvider implements CloudProvider {
             this.jobs.set(id, { status: "running" });
             return { kind: "async", upstreamId: id };
         }
+        const last = Array.isArray(param?.messages) ? param.messages[param.messages.length - 1]?.content : "";
         return {
             kind: "done",
-            result: { text: `echo:${param?.prompt ?? ""}` },
+            result: { text: `echo:${param?.prompt ?? last ?? ""}` },
             usage: param?.usage,
         };
     }

@@ -24,6 +24,9 @@ import TextToVideoIcon from "~icons/mdi/video-outline";
 import ImageToVideo from "./ImageToVideo/ImageToVideo.vue";
 import ImageToVideoIcon from "~icons/mdi/video-image";
 
+import EcomCopy from "./EcomCopy/EcomCopy.vue";
+import EcomCopyIcon from "~icons/mdi/text-box-edit-outline";
+
 import FeedbackIcon from "./../../assets/image/feedback.svg";
 
 import AudioNormalIcon from "~icons/mdi/volume-high";
@@ -55,6 +58,19 @@ export const SoundApps: {
     color: string;
     component: any;
 }[] = [];
+
+export const MarketingApps = [
+    {
+        name: "EcomCopy",
+        titleKey: "ecomCopy.title",
+        title: t("ecomCopy.title"),
+        descriptionKey: "ecomCopy.desc",
+        description: t("ecomCopy.desc"),
+        icon: EcomCopyIcon,
+        color: "#ef4444",
+        component: EcomCopy,
+    },
+];
 
 export const SoundToolApps = [
     {
