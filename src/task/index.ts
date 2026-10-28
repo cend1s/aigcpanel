@@ -16,6 +16,7 @@ import {
     LongTextTts,
     LongTextTtsCleaner,
 } from "../pages/Apps/LongTextTts/task";
+import { ClipMatrix, ClipMatrixCleaner } from "../pages/Apps/ClipMatrix/task";
 import {
     MediaFormatConvert,
     MediaFormatConvertCleaner,
@@ -137,7 +138,8 @@ export const tasks = {
     // general apps
     GeneralModel,
     GeneralComfyUI,
-    
+    // marketing apps
+    ClipMatrix,
 };
 
 export const taskCleaners = {
@@ -171,7 +173,7 @@ export const taskCleaners = {
     // general cleaners（归档到 hub 的结果文件清理）
     GeneralModel: GeneralModelCleaner,
     GeneralComfyUI: GeneralComfyUICleaner,
-    
+    ClipMatrix: ClipMatrixCleaner,
 };
 
 export const TaskManager = {

@@ -74,6 +74,8 @@ import videoMarkZhCN from "../pages/Apps/VideoMark/lang/zh-CN.json";
 import videoMergeEnUS from "../pages/Apps/VideoMerge/lang/en-US.json";
 import videoMergeZhCN from "../pages/Apps/VideoMerge/lang/zh-CN.json";
 
+import clipMatrixEnUS from "../pages/Apps/ClipMatrix/lang/en-US.json";
+import clipMatrixZhCN from "../pages/Apps/ClipMatrix/lang/zh-CN.json";
 import ecomCopyEnUS from "../pages/Apps/EcomCopy/lang/en-US.json";
 import ecomCopyZhCN from "../pages/Apps/EcomCopy/lang/zh-CN.json";
 
@@ -120,6 +122,7 @@ export const messageList = [
             ...videoMarkEnUS,
             ...videoMergeEnUS,
             ...ecomCopyEnUS,
+            ...clipMatrixEnUS,
         },
     },
     {
@@ -161,6 +164,7 @@ export const messageList = [
             ...videoMarkZhCN,
             ...videoMergeZhCN,
             ...ecomCopyZhCN,
+            ...clipMatrixZhCN,
         },
     },
 ];

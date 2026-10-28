@@ -13,6 +13,7 @@ export type TaskBiz =
     | "VideoGen"
     // sound apps
     | "LongTextTts"
+    | "ClipMatrix"
     | "SubtitleTts"
     | "SoundReplace"
     | "AudioNormal"

@@ -26,6 +26,7 @@ import ImageToVideoIcon from "~icons/mdi/video-image";
 
 import EcomCopy from "./EcomCopy/EcomCopy.vue";
 import EcomCopyIcon from "~icons/mdi/text-box-edit-outline";
+import ClipMatrixIcon from "~icons/mdi/view-grid-plus-outline";
 
 import FeedbackIcon from "./../../assets/image/feedback.svg";
 
@@ -69,6 +70,16 @@ export const MarketingApps = [
         icon: EcomCopyIcon,
         color: "#ef4444",
         component: EcomCopy,
+    },
+    {
+        name: "ClipMatrix",
+        titleKey: "clipMatrix.title",
+        title: t("clipMatrix.title"),
+        descriptionKey: "clipMatrix.desc",
+        description: t("clipMatrix.desc"),
+        icon: ClipMatrixIcon,
+        color: "#f97316",
+        component: defineAsyncComponent(() => import("./ClipMatrix/ClipMatrix.vue")),
     },
 ];
 
