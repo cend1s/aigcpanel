@@ -1,6 +1,8 @@
 import packageJson from "../package.json";
 
-const BASE_URL = "https://aigcpanel.com";
+// 后端地址，构建时可通过 VITE_BASE_URL 覆盖（见 backend/README.md）
+const BASE_URL: string =
+    (import.meta as any).env?.VITE_BASE_URL || "http://127.0.0.1:3100";
 
 export const AppConfig = {
     name: "AIGCPanel",
@@ -19,6 +21,6 @@ export const AppConfig = {
     helpUrl: `${BASE_URL}/app_manager/help`,
     serverUrl: `${BASE_URL}/aigcpanel/`,
     basic: {
-        userEnable: false,
+        userEnable: true,
     },
 };

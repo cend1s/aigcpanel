@@ -5,7 +5,6 @@ import { AppConfig } from "../config";
 import { useUserStore } from "../store/modules/user";
 import { t } from "../lang";
 import { useSettingStore } from "../store/modules/setting";
-import WorkflowIcon from "./Icon/WorkflowIcon.vue";
 
 const route = useRouter();
 const user = useUserStore();
@@ -17,9 +16,7 @@ const activeTab = computed(() => {
     if (path === "/server") return "server";
     if (path === "/setting") return "setting";
     if (path === "/video") return "video";
-    if (path === "/live") return "live";
     if (path === "/tool") return "tool";
-    if (path.startsWith("/workflow")) return "workflow";
 });
 
 const userTip = computed(() => {
@@ -104,17 +101,6 @@ const doUser = async () => {
             </a>
             <a
                 class="page-nav-item block text-center py-3"
-                :class="activeTab === 'live' ? 'active' : ''"
-                @click="$router.push('/live')"
-                href="javascript:;"
-            >
-                <div class="flex justify-center">
-                    <icon-live-broadcast class="text-xl" />
-                </div>
-                <div class="text-sm truncate">{{ $t("nav.live") }}</div>
-            </a>
-            <a
-                class="page-nav-item block text-center py-3"
                 :class="activeTab === 'tool' ? 'active' : ''"
                 @click="$router.push('/tool')"
                 href="javascript:;"
@@ -123,17 +109,6 @@ const doUser = async () => {
                     <icon-tool class="text-xl" />
                 </div>
                 <div class="text-sm truncate">{{ $t("nav.tool") }}</div>
-            </a>
-            <a
-                class="page-nav-item block text-center py-3"
-                :class="activeTab === 'workflow' ? 'active' : ''"
-                @click="$router.push('/workflow')"
-                href="javascript:;"
-            >
-                <div class="flex justify-center">
-                    <WorkflowIcon class="h-5 w-5" />
-                </div>
-                <div class="text-sm truncate">{{ $t("nav.workflow") }}</div>
             </a>
             <a
                 class="page-nav-item block text-center py-3"

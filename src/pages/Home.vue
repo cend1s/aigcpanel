@@ -173,28 +173,6 @@ onUnmounted(() => {
                     <icon-tool class="text-amber-500 text-2xl" />
                 </div>
             </div>
-            
-            <div
-                class="bg-white dark:bg-gray-800 rounded-xl p-5 cursor-pointer hover:shadow-md border border-gray-100 dark:border-gray-700 transition-all group flex items-center justify-between relative overflow-hidden"
-                data-nav="live"
-                @click="$router.push('/live')"
-            >
-                <div class="flex-grow z-10 w-0">
-                    <div
-                        class="font-bold text-gray-800 dark:text-gray-200 text-base mb-1"
-                    >
-                        {{ $t("home.live") }}
-                    </div>
-                    <div class="text-gray-500 text-xs truncate pr-2">
-                        {{ $t("intro.interactionSupport") }}
-                    </div>
-                </div>
-                <div
-                    class="w-12 h-12 rounded-full bg-rose-50 dark:bg-rose-900/30 flex items-center justify-center flex-shrink-0 group-hover:scale-125 group-hover:rotate-12 transition-all duration-300"
-                >
-                    <icon-live-broadcast class="text-rose-500 text-2xl" />
-                </div>
-            </div>
         </div>
 
         <!-- 数据统计 -->

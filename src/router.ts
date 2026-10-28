@@ -13,12 +13,6 @@ const routes = [
             },
             { path: "server", component: () => import("./pages/Server.vue") },
             { path: "tool", component: () => import("./pages/Tool.vue") },
-            { path: "live", component: () => import("./pages/Live.vue") },
-            {
-                path: "workflow",
-                component: () => import("./pages/Workflow.vue"),
-            },
-            
             { path: "setting", component: () => import("./pages/Setting.vue") },
         ],
     },
