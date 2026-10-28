@@ -7,6 +7,8 @@ import { Dialog } from "../../../../lib/dialog";
 import { ffprobeGetMediaDuration } from "../../../../lib/ffprobe";
 import { TaskRecord, TaskService } from "../../../../service/TaskService";
 import SoundGenerateForm from "../../../Video/components/SoundGenerateForm.vue";
+import AssetPicker from "../../../Assets/AssetPicker.vue";
+import type { AssetRecord } from "../../../Assets/assets";
 import { MAX_VARIANTS, maxUniqueCombos, planVariants, splitScripts } from "../plan";
 import { Clip, RATIOS } from "../render";
 import { ClipMatrixModelConfigType } from "../type";
@@ -52,6 +54,18 @@ const maxUnique = computed(() =>
 );
 
 const submitting = ref(false);
+
+// 从资产中心选择素材视频 / 文案
+const pickVideo = ref(false);
+const pickText = ref(false);
+const onPickVideos = (list: AssetRecord[]) => {
+    const files = list.map((a) => a.content.file).filter((f) => f && !formData.value.videos.includes(f));
+    formData.value.videos = [...formData.value.videos, ...files];
+};
+const onPickTexts = (list: AssetRecord[]) => {
+    const texts = list.map((a) => a.content.text.trim()).filter(Boolean);
+    formData.value.scripts = [formData.value.scripts.trim(), ...texts].filter(Boolean).join("\n\n");
+};
 
 const doSubmit = async () => {
     if (formData.value.videos.length < 1) return Dialog.tipError(t("clipMatrix.needVideos"));
@@ -131,6 +145,8 @@ const doSubmit = async () => {
         <div class="mb-4">
             <div class="font-bold mb-2">1. {{ $t("clipMatrix.stepVideos") }}</div>
             <FilesSelector :extensions="['mp4', 'mov', 'mkv', 'avi', 'webm']" v-model="formData.videos" />
+            <a-button size="small" class="mt-2" data-action="pick-videos" @click="pickVideo = true">{{ $t("assets.pick") }}</a-button>
+            <AssetPicker v-model:visible="pickVideo" type="video" @select="onPickVideos" />
             <div class="text-xs text-gray-400 mt-1">{{ $t("clipMatrix.stepVideosHint") }}</div>
         </div>
         <div class="mb-4">
@@ -143,6 +159,8 @@ const doSubmit = async () => {
                 :auto-size="{ minRows: 4, maxRows: 12 }"
                 :placeholder="$t('clipMatrix.scriptsPlaceholder')"
             />
+            <a-button size="small" class="mt-2" data-action="pick-texts" @click="pickText = true">{{ $t("assets.pick") }}</a-button>
+            <AssetPicker v-model:visible="pickText" type="text" @select="onPickTexts" />
         </div>
         <div class="mb-4">
             <div class="font-bold mb-2">3. {{ $t("clipMatrix.stepVoices") }}</div>

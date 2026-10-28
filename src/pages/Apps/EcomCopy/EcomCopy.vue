@@ -8,6 +8,7 @@ import { StorageRecord, StorageService } from "../../../service/StorageService";
 import Router from "../../../router";
 import { useUserStore } from "../../../store/modules/user";
 import { handoff, HandoffTarget } from "./handoff";
+import { AssetService } from "../../../service/AssetService";
 import {
     buildMessages,
     commonFields,
@@ -137,6 +138,14 @@ const doSend = (id: HandoffTarget["id"]) => {
     }
 };
 
+const doSaveAsset = async () => {
+    await AssetService.addText(`${t(tpl.value.titleKey)} · ${values.value.product ?? ""}`, resultText.value, [
+        t(tpl.value.titleKey),
+        values.value.product ?? "",
+    ], "copywriting");
+    Dialog.tipSuccess(t("assets.saved"));
+};
+
 const doUseHistory = (r: StorageRecord) => {
     const c = r.content || {};
     if (templates.some((x) => x.id === c.tplId)) tplId.value = c.tplId;
@@ -255,6 +264,9 @@ const doDeleteHistory = async (r: StorageRecord) => {
                         </a-button>
                         <a-button size="small" type="primary" class="mr-2" data-action="to-video" @click="doSend('videoGenFlow')">
                             {{ $t("ecomCopy.toVideo") }}
+                        </a-button>
+                        <a-button size="small" class="mr-2" data-action="save-asset" @click="doSaveAsset">
+                            {{ $t("assets.saveToLibrary") }}
                         </a-button>
                         <a-button size="small" @click="doCopy">{{ $t("common.copyText") }}</a-button>
                     </div>

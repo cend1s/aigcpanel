@@ -17,6 +17,7 @@ const activeTab = computed(() => {
     if (path === "/setting") return "setting";
     if (path === "/video") return "video";
     if (path === "/tool") return "tool";
+    if (path === "/assets") return "assets";
 });
 
 const userTip = computed(() => {
@@ -109,6 +110,17 @@ const doUser = async () => {
                     <icon-tool class="text-xl" />
                 </div>
                 <div class="text-sm truncate">{{ $t("nav.tool") }}</div>
+            </a>
+            <a
+                class="page-nav-item block text-center py-3"
+                :class="activeTab === 'assets' ? 'active' : ''"
+                @click="$router.push('/assets')"
+                href="javascript:;"
+            >
+                <div class="flex justify-center">
+                    <i-mdi-folder-multiple-image class="text-xl" />
+                </div>
+                <div class="text-sm truncate">{{ $t("nav.assets") }}</div>
             </a>
             <a
                 class="page-nav-item block text-center py-3"

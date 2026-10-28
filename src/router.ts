@@ -13,6 +13,7 @@ const routes = [
             },
             { path: "server", component: () => import("./pages/Server.vue") },
             { path: "tool", component: () => import("./pages/Tool.vue") },
+            { path: "assets", component: () => import("./pages/Assets/AssetCenter.vue") },
             { path: "setting", component: () => import("./pages/Setting.vue") },
         ],
     },
