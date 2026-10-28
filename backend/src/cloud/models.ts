@@ -60,6 +60,10 @@ export const saveModel = (db: Db, m: ModelInput): number => {
     if (!m.name || !m.version || !m.provider) {
         throw new Error("name / version / provider 不能为空");
     }
+    // 桌面端按名称前缀 Cloud 识别云端模型并加载云端驱动；其他名称会被当作本地模型包加载而报错
+    if (!/^Cloud[A-Za-z0-9_-]*$/.test(m.name)) {
+        throw new Error("云端模型名称必须以 Cloud 开头，且只能包含字母、数字、下划线和短横线");
+    }
     db.prepare(
         `INSERT INTO cloud_models (name, version, title, description, logo, content, functions, provider, provider_config, pricing, enabled)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

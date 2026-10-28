@@ -8,4 +8,6 @@ export type AppContext = {
     payments: PaymentRegistry;
     // 对外可访问的地址，用于生成支付回调和跳转链接
     baseUrl: string;
+    // 供应商返回的文件落盘目录
+    filesDir: string;
 };

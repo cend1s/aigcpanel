@@ -117,3 +117,14 @@
 **桌面端已完成**:`Apps/EcomCopy`(电商文案,入口在「工具」页第一组「营销创作」)、`service/CloudService.ts`(提交云端任务并轮询,额度不足引导充值)。已在浏览器测试台(桩 `$mapi` + 真实后端)验证:模板、必填校验、生成、扣费、额度不足提示、历史记录;未在真实 Electron 中运行。
 
 **尚未开始**:P4 其余部分(智能体中心首页、图片/视频/口播的云端模式接入、流水线)、P5 剪辑矩阵/资产中心、管理后台界面、桌面端联调(webview 登录回写、云端任务提交)、真实支付网关联调、直播(第 5 节)。
+
+### 7.1 图片/视频生成:复用原项目,补云端驱动(2026-10)
+
+原项目已有完整的文生图、图生图、文生视频、图生视频页面和任务流程(`Apps/TextToImage` 等,经 `serverStore` 调用模型)。**缺的不是页面,而是云端模型的执行驱动**:`electron/mapi/server/main.ts` 对名称以 `Cloud` 开头的模型执行 `new AigcServer["Cloud"]()`,但 `aigcserver/index.ts` 没有导出它(闭源),所以云端模型一调用就报错。
+
+已补:
+- `electron/aigcserver/CloudServer.ts` + `cloud/runner.ts`:提交 → 轮询 → 下载结果,返回与本地模型一致的 `{type:"success", data:{url}}`;任务 id 作 `clientId` 幂等;本地参考图转 data URL。
+- 后端:`openai-image` 供应商、`/files` 下载、`clientId` 去重、模型名必须以 `Cloud` 开头。
+- 验证:runner 单元测试(5)、驱动↔真实后端 HTTP 契约测试(扣费、重试不重复扣费、额度不足、上游失败退款)。**未在真实 Electron 里点过现有图片页面**。
+
+仍缺:视频厂商适配器(异步)、图生图等真实厂商联调、`ServerCloudRecord.functions` 的参数表单定义需与各厂商参数对齐。

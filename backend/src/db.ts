@@ -129,6 +129,7 @@ export const openDb = (file: string): Db => {
             param       TEXT NOT NULL DEFAULT '{}',
             result      TEXT NOT NULL DEFAULT '{}',
             error       TEXT NOT NULL DEFAULT '',
+            client_id   TEXT NOT NULL DEFAULT '',
             created_at  INTEGER NOT NULL,
             updated_at  INTEGER NOT NULL
         );
@@ -148,5 +149,13 @@ export const openDb = (file: string): Db => {
     if (!cols.some((c) => c.name === "role")) {
         db.exec("ALTER TABLE users ADD COLUMN role INTEGER NOT NULL DEFAULT 1");
     }
+    const taskCols = db.prepare("PRAGMA table_info(cloud_tasks)").all() as any[];
+    if (!taskCols.some((c) => c.name === "client_id")) {
+        db.exec("ALTER TABLE cloud_tasks ADD COLUMN client_id TEXT NOT NULL DEFAULT ''");
+    }
+    // 客户端任务 id 去重：桌面端重试或重启后重新提交同一个任务，不会重复扣费
+    db.exec(
+        "CREATE UNIQUE INDEX IF NOT EXISTS idx_tasks_client ON cloud_tasks(user_id, client_id) WHERE client_id != ''",
+    );
     return db;
 };

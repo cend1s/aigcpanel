@@ -27,11 +27,11 @@ test("task/check：未登录 1001；额度不足返回 CreditNotEnough；充值�
     const ctx = await setup();
     addModel(ctx);
     const u = await newUser(ctx);
-    assert.equal((await json(post(ctx, "/api/aigcpanel/task/check", { model: "m1", version: "1.0" }))).code, 1001);
-    const low = await json(post(ctx, "/api/aigcpanel/task/check", { model: "m1", version: "1.0" }, u.token));
+    assert.equal((await json(post(ctx, "/api/aigcpanel/task/check", { model: "CloudM1", version: "1.0" }))).code, 1001);
+    const low = await json(post(ctx, "/api/aigcpanel/task/check", { model: "CloudM1", version: "1.0" }, u.token));
     assert.equal(low.data.type, "CreditNotEnough");
     credit(ctx.db, u.id, 100, "topup");
-    assert.equal((await json(post(ctx, "/api/aigcpanel/task/check", { model: "m1", version: "1.0" }, u.token))).code, 0);
+    assert.equal((await json(post(ctx, "/api/aigcpanel/task/check", { model: "CloudM1", version: "1.0" }, u.token))).code, 0);
 });
 
 test("同步任务成功：按次扣费并写流水", async () => {
@@ -39,7 +39,7 @@ test("同步任务成功：按次扣费并写流水", async () => {
     addModel(ctx);
     const u = await newUser(ctx);
     credit(ctx.db, u.id, 1000, "topup");
-    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { prompt: "hi" } }, u.token));
+    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { prompt: "hi" } }, u.token));
     assert.equal(r.data.status, "succeeded");
     assert.equal(r.data.cost, 100);
     assert.deepEqual(getBalance(ctx.db, u.id), { quota: 900, usedQuota: 100 });
@@ -51,7 +51,7 @@ test("额度不足时拒绝提交，且不会冻结任何额度", async () => {
     addModel(ctx);
     const u = await newUser(ctx);
     credit(ctx.db, u.id, 50, "topup");
-    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0" }, u.token));
+    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0" }, u.token));
     assert.equal(r.data.type, "CreditNotEnough");
     assert.equal(getBalance(ctx.db, u.id)!.quota, 50);
 });
@@ -61,7 +61,7 @@ test("上游失败：全额退回", async () => {
     addModel(ctx);
     const u = await newUser(ctx);
     credit(ctx.db, u.id, 1000, "topup");
-    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { fail: true } }, u.token));
+    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { fail: true } }, u.token));
     assert.equal(r.data.status, "failed");
     assert.deepEqual(getBalance(ctx.db, u.id), { quota: 1000, usedQuota: 0 });
     assert.equal(sum(ctx.db, u.id), 1000);
@@ -73,7 +73,7 @@ test("按 token 计费：实际用量小于预估时多退", async () => {
     const u = await newUser(ctx);
     credit(ctx.db, u.id, 10000, "topup");
     const r = await json(
-        post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { prompt: "hi", usage: { inputTokens: 1000, outputTokens: 1000 } } }, u.token),
+        post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { prompt: "hi", usage: { inputTokens: 1000, outputTokens: 1000 } } }, u.token),
     );
     assert.equal(r.data.status, "succeeded");
     assert.equal(r.data.cost, 40); // 1k*10 + 1k*30
@@ -85,7 +85,7 @@ test("异步任务：查询推进到成功后结算，重复查询不会重复�
     addModel(ctx);
     const u = await newUser(ctx);
     credit(ctx.db, u.id, 1000, "topup");
-    const s = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { async: true } }, u.token));
+    const s = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { async: true } }, u.token));
     assert.equal(s.data.status, "running");
     assert.equal(getBalance(ctx.db, u.id)!.quota, 900); // 已冻结
     let st = await json(post(ctx, "/api/cloud/task/status", { id: s.data.id }, u.token));
@@ -105,7 +105,7 @@ test("不能查询别人的任务", async () => {
     const a = await newUser(ctx, "a@x.com");
     const b = await newUser(ctx, "b@x.com");
     credit(ctx.db, a.id, 1000, "topup");
-    const s = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { async: true } }, a.token));
+    const s = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { async: true } }, a.token));
     const r = await json(post(ctx, "/api/cloud/task/status", { id: s.data.id }, b.token));
     assert.equal(r.data.type, "TaskNotFound");
 });
@@ -117,7 +117,7 @@ test("订阅额度优先扣，不足部分回落钱包；失败时按来源各�
     const planId = savePlan(ctx.db, { title: "月卡", priceCents: 1000, durationDays: 30, quota: 60 });
     activatePlan(ctx.db, u.id, planId);
     credit(ctx.db, u.id, 500, "topup");
-    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { async: true } }, u.token));
+    const r = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { async: true } }, u.token));
     // 预估 100：订阅 60 + 钱包 40
     assert.equal(getBalance(ctx.db, u.id)!.quota, 460);
     assert.equal((ctx.db.prepare("SELECT quota_used FROM subscriptions").get() as any).quota_used, 60);
@@ -132,10 +132,10 @@ test("兜底扫描：提交中断的任务退款，超时的运行任务退款",
     addModel(ctx);
     const u = await newUser(ctx);
     credit(ctx.db, u.id, 1000, "topup");
-    const a = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { async: true } }, u.token));
+    const a = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { async: true } }, u.token));
     // 模拟：另一个任务停在 reserved（进程在调用上游前崩溃）
     ctx.db.prepare("UPDATE cloud_tasks SET status = 'reserved', updated_at = 1, created_at = 1 WHERE id = ?").run(a.data.id);
-    const b = await json(post(ctx, "/api/cloud/task/submit", { model: "m1", version: "1.0", param: { async: true } }, u.token));
+    const b = await json(post(ctx, "/api/cloud/task/submit", { model: "CloudM1", version: "1.0", param: { async: true } }, u.token));
     ctx.db.prepare("UPDATE cloud_tasks SET updated_at = 1, created_at = 1 WHERE id = ?").run(b.data.id);
     assert.equal(getBalance(ctx.db, u.id)!.quota, 800);
     assert.equal(await sweepTasks(ctx.db, ctx.providers), 2);
@@ -173,7 +173,15 @@ test("OpenAI 兼容供应商：解析回复与用量，上游报错时抛出", a
     server.close();
 });
 
+test("云端模型名称必须以 Cloud 开头（桌面端按前缀加载云端驱动）", async () => {
+    const ctx = await setup();
+    for (const name of ["gpt", "cloudx", "Cloud x", "../Cloud"]) {
+        assert.throws(() => saveModel(ctx.db, { name, version: "1", title: "t", provider: "mock", pricing: { type: "per_call", amount: 1 } }), /以 Cloud 开头/);
+    }
+    assert.ok(saveModel(ctx.db, { name: "Cloud-Img_2", version: "1", title: "t", provider: "mock", pricing: { type: "per_call", amount: 1 } }));
+});
+
 test("管理后台保存模型时拒绝非法价格", async () => {
     const ctx = await setup();
-    assert.throws(() => saveModel(ctx.db, { name: "a", version: "1", title: "a", provider: "mock", pricing: { type: "per_call", amount: -5 } }));
+    assert.throws(() => saveModel(ctx.db, { name: "CloudA", version: "1", title: "a", provider: "mock", pricing: { type: "per_call", amount: -5 } }));
 });

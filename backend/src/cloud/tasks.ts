@@ -126,8 +126,18 @@ export const submitTask = async (
     db: Db,
     registry: ProviderRegistry,
     userId: number,
-    input: { model: string; version: string; param?: any },
+    input: { model: string; version: string; param?: any; clientId?: string },
 ) => {
+    const clientId = String(input.clientId ?? "").slice(0, 100);
+    if (clientId) {
+        // 同一客户端任务只会创建一次：再次提交直接返回已有任务（桌面端重试、重启后续跑）
+        const existing: any = db
+            .prepare("SELECT id FROM cloud_tasks WHERE user_id = ? AND client_id = ?")
+            .get(userId, clientId);
+        if (existing) {
+            return refreshTask(db, registry, existing.id, userId);
+        }
+    }
     const model = getModel(db, input.model, input.version);
     if (!model) {
         throw new TaskError("云端模型不存在或已下架", "ModelNotFound");
@@ -145,9 +155,9 @@ export const submitTask = async (
         tx(db, () => {
             const funding = estimate > 0 ? reserveFunds(db, userId, estimate, { type: "cloud_task", id }) : { wallet: 0, subs: [] };
             db.prepare(
-                `INSERT INTO cloud_tasks (id, user_id, model_id, status, reserved, funding, param, created_at, updated_at)
-                 VALUES (?, ?, ?, 'reserved', ?, ?, ?, ?, ?)`,
-            ).run(id, userId, model.id, estimate, JSON.stringify(funding), JSON.stringify(param), now(), now());
+                `INSERT INTO cloud_tasks (id, user_id, model_id, status, reserved, funding, param, client_id, created_at, updated_at)
+                 VALUES (?, ?, ?, 'reserved', ?, ?, ?, ?, ?, ?)`,
+            ).run(id, userId, model.id, estimate, JSON.stringify(funding), JSON.stringify(param), clientId, now(), now());
         });
     } catch (e) {
         if (e instanceof InsufficientQuota) {

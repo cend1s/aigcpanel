@@ -30,13 +30,14 @@ export const cloudRoutes = (app: FastifyInstance, { db, providers }: AppContext)
     app.post("/api/cloud/task/submit", async (req) => {
         const user = requireUser(db, req);
         if (isFailure(user)) return user;
-        const b = (req.body ?? {}) as { model?: string; version?: string; param?: unknown };
+        const b = (req.body ?? {}) as { model?: string; version?: string; param?: unknown; clientId?: string };
         try {
             return ok(
                 await submitTask(db, providers, user.id, {
                     model: String(b.model ?? ""),
                     version: String(b.version ?? ""),
                     param: b.param,
+                    clientId: b.clientId,
                 }),
             );
         } catch (e) {

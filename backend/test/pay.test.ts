@@ -117,7 +117,7 @@ test("管理员批量生成兑换码，用户兑换入账；模型保存审计�
     assert.equal(created.data.keys.length, 2);
     assert.equal((await json(post(ctx, "/api/account/redeem", { key: created.data.keys[0] }, u.token))).data.quota, 200);
     assert.notEqual((await json(post(ctx, "/api/account/redeem", { key: created.data.keys[0] }, u.token))).code, 0);
-    await post(ctx, "/api/admin/model/save", { name: "z", version: "1", title: "z", provider: "mock", pricing: { type: "per_call", amount: 1 }, providerConfig: { apiKey: "TOPSECRET" } }, admin.token);
+    await post(ctx, "/api/admin/model/save", { name: "CloudZ", version: "1", title: "z", provider: "mock", pricing: { type: "per_call", amount: 1 }, providerConfig: { apiKey: "TOPSECRET" } }, admin.token);
     const logs = JSON.stringify(ctx.db.prepare("SELECT detail FROM audit_logs").all());
     assert.ok(!logs.includes("TOPSECRET"));
 });
