@@ -5,7 +5,9 @@ import { t } from "../../../lang";
 import { Dialog } from "../../../lib/dialog";
 import { CloudError, CloudService } from "../../../service/CloudService";
 import { StorageRecord, StorageService } from "../../../service/StorageService";
+import Router from "../../../router";
 import { useUserStore } from "../../../store/modules/user";
+import { handoff, HandoffTarget } from "./handoff";
 import {
     buildMessages,
     commonFields,
@@ -125,6 +127,16 @@ const doCopy = async () => {
     }
 };
 
+// 把文案送到已有功能页（一键合成口播视频 / 长文本转音频），目标页会带入文本，可继续修改后再提交
+const doSend = (id: HandoffTarget["id"]) => {
+    try {
+        handoff(id, resultText.value, (route) => Router.push(route));
+        Dialog.tipSuccess(t("ecomCopy.sent"));
+    } catch (e) {
+        Dialog.tipError(t("ecomCopy.sendEmpty"));
+    }
+};
+
 const doUseHistory = (r: StorageRecord) => {
     const c = r.content || {};
     if (templates.some((x) => x.id === c.tplId)) tplId.value = c.tplId;
@@ -238,6 +250,12 @@ const doDeleteHistory = async (r: StorageRecord) => {
                                 {{ $t("ecomCopy.cost", { n: cost }) }}
                             </span>
                         </div>
+                        <a-button size="small" class="mr-2" data-action="to-audio" @click="doSend('longTextTts')">
+                            {{ $t("ecomCopy.toAudio") }}
+                        </a-button>
+                        <a-button size="small" type="primary" class="mr-2" data-action="to-video" @click="doSend('videoGenFlow')">
+                            {{ $t("ecomCopy.toVideo") }}
+                        </a-button>
                         <a-button size="small" @click="doCopy">{{ $t("common.copyText") }}</a-button>
                     </div>
                     <a-textarea v-model="resultText" :auto-size="{ minRows: 8, maxRows: 24 }" />

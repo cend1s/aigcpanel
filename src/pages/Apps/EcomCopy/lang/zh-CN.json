@@ -39,5 +39,9 @@
     "cloud.loginRequired": "请先登录后再使用云端功能",
     "cloud.cancelled": "已取消",
     "cloud.timeout": "等待超时，额度已自动退回，请重试",
-    "cloud.failed": "生成失败，额度已退回"
+    "cloud.failed": "生成失败，额度已退回",
+    "ecomCopy.toVideo": "做成口播视频",
+    "ecomCopy.toAudio": "转成音频",
+    "ecomCopy.sent": "已带入目标页面，可继续修改后提交",
+    "ecomCopy.sendEmpty": "没有可发送的文本（去掉表情和标签后为空）"
 }

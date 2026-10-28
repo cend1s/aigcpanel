@@ -39,5 +39,9 @@
     "cloud.loginRequired": "Please log in to use cloud features",
     "cloud.cancelled": "Cancelled",
     "cloud.timeout": "Timed out; credits were refunded, please retry",
-    "cloud.failed": "Generation failed; credits were refunded"
+    "cloud.failed": "Generation failed; credits were refunded",
+    "ecomCopy.toVideo": "Make talking video",
+    "ecomCopy.toAudio": "Convert to audio",
+    "ecomCopy.sent": "Sent to the target page; edit it there before submitting",
+    "ecomCopy.sendEmpty": "Nothing to send after removing emoji and hashtags"
 }

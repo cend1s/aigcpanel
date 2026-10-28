@@ -128,3 +128,12 @@
 - 验证:runner 单元测试(5)、驱动↔真实后端 HTTP 契约测试(扣费、重试不重复扣费、额度不足、上游失败退款)。**未在真实 Electron 里点过现有图片页面**。
 
 仍缺:视频厂商适配器(异步)、图生图等真实厂商联调、`ServerCloudRecord.functions` 的参数表单定义需与各厂商参数对齐。
+
+### 7.2 文案 → 配音 → 口播视频:原项目已有「一键合成」,只补衔接(2026-10)
+
+原项目的 `Apps/VideoGenFlow`(「一键合成流程」,`/video?tab=VideoGenFlow`)本来就是 文本 → 配音 → 数字人视频,另有 `LongTextTts`(长文本转音频)。因此**不新写流水线**,只让电商文案页把结果送过去:
+
+- `EcomCopy/handoff.ts`:把文案整理成适合朗读的文本(去话题标签、表情、Markdown、链接),写入目标页的 localStorage 草稿(`VideoGenFlowCreate.formData` / `LongTextTtsCreate.formData`),再跳转;目标页挂载时读取草稿作为初始文本。
+- `handoff.test.ts` 会读取目标页源码,校验草稿 key 仍然存在,防止上游改名后悄悄失效。
+- 注意:原项目已有 `ModelAgentButton`(用本地配置的文本模型生成文案);本项目的「电商文案」是云端计费、带电商模板的版本,两者并存。
+- 已在浏览器测试台验证两个按钮的草稿内容;**未在真实 Electron 里验证跳转后目标页的显示**。
