@@ -28,41 +28,134 @@ async function syncToApp(payload){
   try{ if(window.$mapi&&window.$mapi.user&&window.$mapi.user.save){ await window.$mapi.user.save(payload); } }catch(e){}
 }`;
 
-const authPage = (kind: "login" | "register", dark: boolean) => {
-    const isLogin = kind === "login";
-    return layout(
-        isLogin ? "登录" : "注册",
-        `<h1>${isLogin ? "登录" : "注册"}</h1>
+// 登录/注册/找回密码页共用的脚本：图形验证码、发送邮件验证码（60 秒倒计时）、提交
+const AUTH_SCRIPT = `
+const $=id=>document.getElementById(id);
+const say=(t,ok)=>{const m=$('msg');m.textContent=t||'';m.style.color=ok?'#00b42a':'#f53f3f';};
+let capId='';
+async function loadCaptcha(){
+  const r=await (await fetch('/api/auth/captcha')).json();
+  if(r.code)return;
+  capId=r.data.id; $('capimg').innerHTML=r.data.svg; $('captcha').value='';
+}
+function showCaptcha(){ $('caprow').style.display='flex'; loadCaptcha(); }
+async function call(url,body){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  try{return await r.json();}catch(e){return {code:r.status,msg:'请求失败（'+r.status+'）',data:{}};}
+}
+function captchaBody(){ return $('caprow').style.display==='none'?{}:{captchaId:capId,captchaCode:$('captcha').value}; }
+async function sendCode(purpose){
+  const btn=$('sendcode'); if(btn.disabled)return;
+  const r=await call('/api/auth/send-code',{email:$('email').value,purpose,...captchaBody()});
+  loadCaptcha(); // 图形验证码一次性，每次请求后都换新
+  if(r.code){say(r.msg);return;}
+  say(r.data.message,true);
+  let n=60; btn.disabled=true;
+  const t=setInterval(()=>{btn.textContent=n+' 秒后重发'; if(--n<0){clearInterval(t);btn.disabled=false;btn.textContent='获取验证码';}},1000);
+}`;
+
+const CAPTCHA_ROW = (visible: boolean) => `
+<div id="caprow" class="caprow" style="display:${visible ? "flex" : "none"}">
+  <input id="captcha" placeholder="图形验证码" maxlength="6" autocomplete="off">
+  <span id="capimg" title="看不清？点击换一张" onclick="loadCaptcha()"></span>
+</div>`;
+
+const AUTH_STYLE = `<style>.caprow{gap:8px;align-items:flex-start}.caprow input{flex:1}#capimg{cursor:pointer;height:40px;border-radius:8px;overflow:hidden;background:#fff}
+.coderow{display:flex;gap:8px}.coderow input{flex:1}.coderow button{width:auto;white-space:nowrap;padding:10px 12px}.coderow button:disabled{opacity:.6;cursor:not-allowed}
+.links{display:flex;justify-content:space-between;margin-top:16px}</style>`;
+
+const loginPage = (dark: boolean) =>
+    layout(
+        "登录",
+        `${AUTH_STYLE}<h1>登录</h1>
 <div class="msg" id="msg"></div>
 <input id="email" type="email" placeholder="邮箱" autocomplete="email">
-${isLogin ? "" : '<input id="nickname" placeholder="昵称（可选）" maxlength="20">'}
-<input id="password" type="password" placeholder="密码（至少 8 位）" autocomplete="${isLogin ? "current-password" : "new-password"}">
-<button id="submit">${isLogin ? "登录" : "注册"}</button>
-<div class="sub">${isLogin ? '没有账号？<a href="/register">去注册</a>' : '已有账号？<a href="/login">去登录</a>'}</div>
-<script>${SYNC_SCRIPT}
-document.getElementById('submit').onclick=async()=>{
-  const msg=document.getElementById('msg'); msg.textContent='';
-  const body={email:email.value,password:password.value${isLogin ? "" : ",nickname:nickname.value"}};
-  const r=await fetch('/api/auth/${isLogin ? "login" : "register"}',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-  const j=await r.json();
-  if(j.code){msg.textContent=j.msg;return;}
-  await syncToApp(j.data);
+<input id="password" type="password" placeholder="密码" autocomplete="current-password">
+${CAPTCHA_ROW(false)}
+<button id="submit">登录</button>
+<div class="links sub"><a href="/register">注册新账号</a><a href="/login?mode=forgot">忘记密码？</a></div>
+<script>${SYNC_SCRIPT}${AUTH_SCRIPT}
+$('submit').onclick=async()=>{
+  say('');
+  const r=await call('/api/auth/login',{email:$('email').value,password:$('password').value,...captchaBody()});
+  if(r.code){
+    say(r.msg);
+    // 失败次数达到阈值后，后端要求图形验证码
+    if(r.data&&r.data.type==='CaptchaRequired'){showCaptcha();}else if($('caprow').style.display!=='none'){loadCaptcha();}
+    return;
+  }
+  await syncToApp(r.data);
   location.href='/app_manager/user'+location.search;
-};</script>`,
+};
+$('password').addEventListener('keydown',e=>{if(e.key==='Enter')$('submit').click();});
+</script>`,
         dark,
     );
+
+const registerPage = (dark: boolean) =>
+    layout(
+        "注册",
+        `${AUTH_STYLE}<h1>注册</h1>
+<div class="msg" id="msg"></div>
+<input id="email" type="email" placeholder="邮箱" autocomplete="email">
+${CAPTCHA_ROW(true)}
+<div class="coderow"><input id="code" placeholder="邮箱验证码" maxlength="6" inputmode="numeric" autocomplete="one-time-code"><button id="sendcode" type="button">获取验证码</button></div>
+<input id="nickname" placeholder="昵称（可选）" maxlength="20" style="margin-top:12px">
+<input id="password" type="password" placeholder="密码（8 位以上，含字母和数字）" autocomplete="new-password">
+<button id="submit">注册</button>
+<div class="sub">已有账号？<a href="/login">去登录</a></div>
+<script>${SYNC_SCRIPT}${AUTH_SCRIPT}
+loadCaptcha();
+$('sendcode').onclick=()=>sendCode('register');
+$('submit').onclick=async()=>{
+  say('');
+  const r=await call('/api/auth/register',{email:$('email').value,code:$('code').value,nickname:$('nickname').value,password:$('password').value});
+  if(r.code){say(r.msg);return;}
+  await syncToApp(r.data);
+  location.href='/app_manager/user'+location.search;
 };
+</script>`,
+        dark,
+    );
+
+const forgotPage = (dark: boolean) =>
+    layout(
+        "找回密码",
+        `${AUTH_STYLE}<h1>找回密码</h1>
+<div class="msg" id="msg"></div>
+<input id="email" type="email" placeholder="注册时使用的邮箱" autocomplete="email">
+${CAPTCHA_ROW(true)}
+<div class="coderow"><input id="code" placeholder="邮箱验证码" maxlength="6" inputmode="numeric" autocomplete="one-time-code"><button id="sendcode" type="button">获取验证码</button></div>
+<input id="password" type="password" placeholder="新密码（8 位以上，含字母和数字）" autocomplete="new-password" style="margin-top:12px">
+<button id="submit">重置密码</button>
+<div class="sub"><a href="/login">返回登录</a></div>
+<script>${AUTH_SCRIPT}
+loadCaptcha();
+$('sendcode').onclick=()=>sendCode('reset');
+$('submit').onclick=async()=>{
+  say('');
+  const r=await call('/api/auth/reset-password',{email:$('email').value,code:$('code').value,password:$('password').value});
+  if(r.code){say(r.msg);return;}
+  say('密码已重置，所有设备上的登录已失效，请用新密码登录',true);
+  setTimeout(()=>{location.href='/login';},1500);
+};
+</script>`,
+        dark,
+    );
 
 const isDark = (req: FastifyRequest) =>
     (req.query as Record<string, string | undefined>).is_dark === "1";
 
 export const webRoutes = (app: FastifyInstance, db: Db) => {
+    // 找回密码用 /login?mode=forgot：桌面端的用户窗口只允许 /login、/register、/logout 在窗口内打开，
+    // 走同一路径可以留在应用内完成；/forgot 供普通浏览器直接访问
     app.get("/login", async (req, reply) =>
-        reply.type("text/html").send(authPage("login", isDark(req))),
+        reply
+            .type("text/html")
+            .send((req.query as any).mode === "forgot" ? forgotPage(isDark(req)) : loginPage(isDark(req))),
     );
-    app.get("/register", async (req, reply) =>
-        reply.type("text/html").send(authPage("register", isDark(req))),
-    );
+    app.get("/forgot", async (req, reply) => reply.type("text/html").send(forgotPage(isDark(req))));
+    app.get("/register", async (req, reply) => reply.type("text/html").send(registerPage(isDark(req))));
 
     app.get("/logout", async (req, reply) => {
         reply.type("text/html").send(

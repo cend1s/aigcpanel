@@ -70,16 +70,21 @@ export const dataProvider: DataProvider = {
 export type AdminIdentity = { id: number; email: string; nickname: string };
 
 export const authProvider: AuthProvider = {
-    login: async ({ email, password }) => {
+    login: async ({ email, password, captchaId, captchaCode }) => {
         try {
-            const r = await api<{ apiToken: string }>("auth/login", { email, password });
+            const r = await api<{ apiToken: string }>("auth/login", { email, password, captchaId, captchaCode });
             tokenStore.set(r.apiToken);
             await api("admin/me"); // 非管理员会得到 403
             return { success: true, redirectTo: "/" };
         } catch (e) {
             tokenStore.clear();
             const msg = e instanceof ApiError && e.statusCode === 403 ? "该账号不是管理员" : (e as Error).message;
-            return { success: false, error: { name: "登录失败", message: msg } };
+            // Refine 会用 error 弹出通知；是否需要图形验证码单独放在 captchaRequired 里给登录页用
+            return {
+                success: false,
+                error: { name: "登录失败", message: msg },
+                captchaRequired: e instanceof ApiError && e.type === "CaptchaRequired",
+            };
         }
     },
     logout: async () => {

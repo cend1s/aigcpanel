@@ -13,4 +13,16 @@ export const config = {
         key: process.env.EPAY_KEY ?? "",
     },
     mockProvider: process.env.MOCK_PROVIDER === "1",
+    appName: process.env.APP_NAME ?? "AIGCPanel",
+    // 注册必须邮件验证码；仅本地开发可设 REQUIRE_EMAIL_CODE=0 关闭
+    requireEmailCode: process.env.REQUIRE_EMAIL_CODE !== "0",
+    trustProxy: process.env.TRUST_PROXY === "1",
+    smtp: {
+        host: process.env.SMTP_HOST ?? "",
+        port: Number(process.env.SMTP_PORT ?? 465),
+        secure: (process.env.SMTP_SECURE ?? "1") === "1",
+        user: process.env.SMTP_USER ?? "",
+        pass: process.env.SMTP_PASS ?? "",
+        from: process.env.SMTP_FROM ?? "",
+    },
 };

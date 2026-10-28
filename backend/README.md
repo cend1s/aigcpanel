@@ -8,7 +8,7 @@
 cd backend
 npm install
 npm run dev          # 默认 http://127.0.0.1:3100
-npm test             # 42 个测试（含桌面端云端驱动与后端的契约测试）
+npm test             # 52 个测试（含桌面端云端驱动与后端的契约测试）
 npm run typecheck
 npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建管理员
 ```
@@ -44,6 +44,25 @@ npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建
 - 图生图/图生视频的参考图以 data URL 随请求提交（单张不超过 8MB）。
 - 供应商返回 base64 时，图片落盘到 `FILES_DIR`，经 `GET /files/<32位随机名>.png` 提供下载（文件名即凭证，需自行定期清理旧文件）。
 
+## 登录安全
+
+| 机制 | 规则 |
+|---|---|
+| 图形验证码 | `svg-captcha` 本地生成，一次性，5 分钟有效，答案只存哈希。发送邮件验证码前必须通过；登录失败 3 次后必须通过。接口 `GET/POST /api/auth/captcha` |
+| 邮件验证码 | 6 位数字，10 分钟有效，只存哈希；同邮箱同用途 60 秒一次、每天 10 次；输错 5 次作废；新码发出旧码作废。注册（`purpose=register`）与找回密码（`purpose=reset`）使用 |
+| 防枚举 | 发码接口无论邮箱是否注册都返回相同提示；登录失败按邮箱计数，不存在的邮箱与存在的表现一致 |
+| 登录保护 | 15 分钟内失败 3 次要求图形验证码，失败 8 次锁定 15 分钟（正确密码也不行） |
+| 接口限流 | `@fastify/rate-limit`：全局每 IP 每分钟 600 次；登录 20、注册 10、发码 5、重置 10、图形验证码 30。超限返回 429 与中文提示 |
+| 密码 | 8-128 位，必须同时包含字母和数字；重置密码后吊销该用户所有登录（含桌面端） |
+
+页面:`/login`、`/register`、`/login?mode=forgot`（找回密码；用同一路径是为了在桌面端用户窗口内完成）、`/forgot`。
+
+部署注意：
+- **必须配置 SMTP**（见 `.env.example`），否则生产环境拒绝启动。
+- 在反向代理后面时设 `TRUST_PROXY=1`，否则所有请求都被当成同一个 IP 限流。
+- 限流计数在进程内存里，多实例部署时要改用 Redis 存储。
+- 内置图形验证码能挡住简单脚本，挡不住专门的识别工具；遇到批量攻击时，按 `CaptchaService` 接口换成腾讯云、阿里云或 Cloudflare Turnstile 等托管验证码。
+
 ## 接口
 
 客户端约定（桌面端已有调用）：
@@ -75,5 +94,5 @@ npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建
 - **订阅**：只支持单周期额度，没有按月重置；订阅用完后总是回落钱包（没有“禁止回落”开关）。
 - **视频模型**：只有同步的文本、图片供应商；视频厂商（异步轮询）的适配器尚未编写，但任务状态机、轮询、超时退款已支持异步供应商（见 `MockProvider` 的 `async` 模式）。
 - **文本流式输出**：`openai-chat` 为非流式；文案写作的逐字展示需要另加流式接口。
-- **登录**：仅邮箱 + 密码，没有验证码、找回密码、登录限流。
+- **登录**：没有手机号/短信验证码，没有第三方登录；邮件实际投递未在真实 SMTP 上验证。
 - 登录页在 webview 内通过 `window.$mapi.user.save()` 回写桌面端登录态，依赖 preload 暴露 `$mapi`，需桌面端联调确认。

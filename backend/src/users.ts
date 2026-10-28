@@ -29,19 +29,34 @@ const toUser = (row: any): User => ({
     quota: Number(row.quota),
 });
 
+export const normalizeEmail = (email: unknown) => String(email ?? "").trim().toLowerCase();
+
+export const assertEmail = (email: string) => {
+    if (!EMAIL_RE.test(email) || email.length > 100) {
+        throw new UserError("邮箱格式不正确");
+    }
+};
+
+export const assertPassword = (password: unknown) => {
+    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
+        throw new UserError("密码长度需为 8-128 位");
+    }
+    // 至少包含字母和数字两类字符，挡住 12345678 这类弱密码
+    if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+        throw new UserError("密码需同时包含字母和数字");
+    }
+};
+
 export const register = (
     db: Db,
     email: string,
     password: string,
     nickname?: string,
+    emailVerified = false,
 ): User => {
-    email = (email || "").trim().toLowerCase();
-    if (!EMAIL_RE.test(email) || email.length > 100) {
-        throw new UserError("邮箱格式不正确");
-    }
-    if (typeof password !== "string" || password.length < 8 || password.length > 128) {
-        throw new UserError("密码长度需为 8-128 位");
-    }
+    email = normalizeEmail(email);
+    assertEmail(email);
+    assertPassword(password);
     const exists = db.prepare("SELECT 1 FROM users WHERE email = ?").get(email);
     if (exists) {
         throw new UserError("该邮箱已注册");
@@ -49,9 +64,9 @@ export const register = (
     const name = (nickname || "").trim().slice(0, 20) || email.split("@")[0];
     const result = db
         .prepare(
-            "INSERT INTO users (email, password_hash, nickname, created_at) VALUES (?, ?, ?, ?)",
+            "INSERT INTO users (email, password_hash, nickname, email_verified, created_at) VALUES (?, ?, ?, ?, ?)",
         )
-        .run(email, hashPassword(password), name, now());
+        .run(email, hashPassword(password), name, emailVerified ? 1 : 0, now());
     return getUser(db, Number(result.lastInsertRowid))!;
 };
 
@@ -72,6 +87,20 @@ export const login = (db: Db, email: string, password: string): User => {
         throw new UserError("账号已被禁用");
     }
     return toUser(row);
+};
+
+export const userExists = (db: Db, email: string) =>
+    !!db.prepare("SELECT 1 FROM users WHERE email = ?").get(normalizeEmail(email));
+
+/** 重置密码：同时吊销该用户所有已登录的 token（包括桌面端），强制重新登录。 */
+export const resetPassword = (db: Db, email: string, password: string) => {
+    assertPassword(password);
+    const row: any = db.prepare("SELECT id FROM users WHERE email = ?").get(normalizeEmail(email));
+    if (!row) {
+        throw new UserError("账号不存在");
+    }
+    db.prepare("UPDATE users SET password_hash = ?, email_verified = 1 WHERE id = ?").run(hashPassword(password), row.id);
+    db.prepare("DELETE FROM api_tokens WHERE user_id = ?").run(row.id);
 };
 
 export const issueToken = (db: Db, userId: number, deviceUuid = ""): string => {

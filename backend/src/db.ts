@@ -135,6 +135,35 @@ export const openDb = (file: string): Db => {
         );
         CREATE INDEX IF NOT EXISTS idx_tasks_status ON cloud_tasks(status, updated_at);
 
+        -- 邮件验证码：只存哈希；限制有效期、尝试次数、发送频率
+        CREATE TABLE IF NOT EXISTS verification_codes (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            email      TEXT NOT NULL,
+            purpose    TEXT NOT NULL,
+            code_hash  TEXT NOT NULL,
+            attempts   INTEGER NOT NULL DEFAULT 0,
+            used       INTEGER NOT NULL DEFAULT 0,
+            ip         TEXT NOT NULL DEFAULT '',
+            expires_at INTEGER NOT NULL,
+            created_at INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_codes_email ON verification_codes(email, purpose, id);
+
+        -- 图形验证码：一次性，答案只存哈希
+        CREATE TABLE IF NOT EXISTS captchas (
+            id          TEXT PRIMARY KEY,
+            answer_hash TEXT NOT NULL,
+            expires_at  INTEGER NOT NULL
+        );
+
+        -- 登录失败计数：按邮箱（不论账号是否存在）记录，避免通过“锁定”提示枚举账号
+        CREATE TABLE IF NOT EXISTS login_failures (
+            email        TEXT PRIMARY KEY,
+            count        INTEGER NOT NULL DEFAULT 0,
+            first_at     INTEGER NOT NULL,
+            locked_until INTEGER NOT NULL DEFAULT 0
+        );
+
         CREATE TABLE IF NOT EXISTS audit_logs (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             actor_id   INTEGER NOT NULL,
@@ -148,6 +177,9 @@ export const openDb = (file: string): Db => {
     const cols = db.prepare("PRAGMA table_info(users)").all() as any[];
     if (!cols.some((c) => c.name === "role")) {
         db.exec("ALTER TABLE users ADD COLUMN role INTEGER NOT NULL DEFAULT 1");
+    }
+    if (!cols.some((c) => c.name === "email_verified")) {
+        db.exec("ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0");
     }
     const taskCols = db.prepare("PRAGMA table_info(cloud_tasks)").all() as any[];
     if (!taskCols.some((c) => c.name === "client_id")) {

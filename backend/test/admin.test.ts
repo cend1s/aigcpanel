@@ -86,7 +86,7 @@ test("管理后台静态托管：页面与前端路由回退，资源缺失返�
     writeFileSync(join(dir, "assets", "app.js"), "console.log(1)");
     const { buildApp } = await import("../src/app.js");
     const ctx = await setup();
-    const app = buildApp({ db: ctx.db, providers: ctx.providers, payments: new (await import("../src/pay/types.js")).PaymentRegistry(), baseUrl: "http://x", filesDir: ctx.filesDir, adminDir: dir });
+    const app = buildApp({ db: ctx.db, providers: ctx.providers, payments: new (await import("../src/pay/types.js")).PaymentRegistry(), baseUrl: "http://x", filesDir: ctx.filesDir, adminDir: dir, mailer: ctx.mailer, captcha: ctx.captcha, security: { requireEmailCode: false, rateLimit: false, trustProxy: false, appName: "T" } });
     await app.ready();
     const get = (url: string) => app.inject({ method: "GET", url });
     assert.match((await get("/admin/")).body, /ADMIN/);
@@ -97,7 +97,7 @@ test("管理后台静态托管：页面与前端路由回退，资源缺失返�
     assert.equal((await get("/nope")).statusCode, 404);
     // 相对路径也能工作（默认配置是 ../admin/dist）
     const { relative } = await import("node:path");
-    const app2 = buildApp({ db: ctx.db, providers: ctx.providers, payments: new (await import("../src/pay/types.js")).PaymentRegistry(), baseUrl: "http://x", filesDir: ctx.filesDir, adminDir: relative(process.cwd(), dir) });
+    const app2 = buildApp({ db: ctx.db, providers: ctx.providers, payments: new (await import("../src/pay/types.js")).PaymentRegistry(), baseUrl: "http://x", filesDir: ctx.filesDir, adminDir: relative(process.cwd(), dir), mailer: ctx.mailer, captcha: ctx.captcha, security: { requireEmailCode: false, rateLimit: false, trustProxy: false, appName: "T" } });
     await app2.ready();
     assert.match((await app2.inject({ method: "GET", url: "/admin/" })).body, /ADMIN/);
 });

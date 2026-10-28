@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
 import cookie from "@fastify/cookie";
+import rateLimit from "@fastify/rate-limit";
 import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 import type { AppContext } from "./context.js";
@@ -18,14 +19,31 @@ export const buildApp = (ctx: AppContext) => {
         logger: process.env.NODE_ENV !== "test",
         // 图生图/图生视频会把参考图以 data URL 随请求提交
         bodyLimit: 16 * 1024 * 1024,
+        // 部署在反向代理后面时，用 X-Forwarded-For 取真实客户端 IP（限流依赖它）
+        trustProxy: ctx.security.trustProxy,
     });
     app.register(cookie);
+    if (ctx.security.rateLimit) {
+        // 全局按 IP 限流；登录、注册、发验证码等敏感接口在路由上另有更严格的限制。
+        // 内置为单进程内存计数，多实例部署时需改用 Redis 存储（@fastify/rate-limit 支持）。
+        app.register(rateLimit, {
+            global: true,
+            max: 600,
+            timeWindow: "1 minute",
+            errorResponseBuilder: (_req, c) => ({
+                statusCode: 429,
+                code: 429,
+                msg: `请求过于频繁，请 ${Math.ceil(c.ttl / 1000)} 秒后再试`,
+                data: {},
+            }),
+        });
+    }
     // 支付通道的回调常为表单编码，这里不额外引入依赖，自行解析
     app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_req, body, done) => {
         done(null, Object.fromEntries(new URLSearchParams(String(body))));
     });
     app.register(async (instance) => {
-        authRoutes(instance, ctx.db);
+        authRoutes(instance, ctx);
         appManagerRoutes(instance, ctx.db);
         accountRoutes(instance, ctx);
         payRoutes(instance, ctx);

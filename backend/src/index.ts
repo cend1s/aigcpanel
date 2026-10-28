@@ -10,6 +10,8 @@ import { openDb } from "./db.js";
 import { EpayProvider } from "./pay/providers/epay.js";
 import { MockPayProvider } from "./pay/providers/mock.js";
 import { PaymentRegistry } from "./pay/types.js";
+import { SvgCaptchaService } from "./security/captcha.js";
+import { LogMailer, SmtpMailer, type Mailer } from "./security/mailer.js";
 
 const db = openDb(config.dbFile);
 
@@ -25,7 +27,32 @@ const payments = new PaymentRegistry();
 if (config.epay.gateway && config.epay.pid && config.epay.key) payments.register(new EpayProvider(config.epay));
 if (config.paymentMock) payments.register(new MockPayProvider());
 
-const app = buildApp({ db, providers, payments, baseUrl: config.baseUrl, filesDir: config.filesDir, adminDir: config.adminDir });
+// 邮件：配置了 SMTP 就用 SMTP；否则仅允许在非生产环境用日志代替（验证码会打印在服务日志里）
+let mailer: Mailer;
+if (config.smtp.host) {
+    mailer = new SmtpMailer(config.smtp, config.smtp.from || config.smtp.user);
+} else if (process.env.NODE_ENV === "production") {
+    throw new Error("生产环境必须配置 SMTP_HOST 等邮件参数，否则用户收不到验证码");
+} else {
+    mailer = new LogMailer((msg) => console.warn(msg));
+}
+
+const app = buildApp({
+    db,
+    providers,
+    payments,
+    baseUrl: config.baseUrl,
+    filesDir: config.filesDir,
+    adminDir: config.adminDir,
+    mailer,
+    captcha: new SvgCaptchaService(db),
+    security: {
+        requireEmailCode: config.requireEmailCode,
+        rateLimit: true,
+        trustProxy: config.trustProxy,
+        appName: config.appName,
+    },
+});
 
 // 每分钟扫描一次悬挂任务，保证崩溃或上游无响应时额度不会一直被冻结
 setInterval(() => {

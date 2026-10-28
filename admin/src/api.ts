@@ -11,6 +11,8 @@ export class ApiError extends Error {
     constructor(
         message: string,
         public statusCode: number,
+        /** 后端 data.type，如 CaptchaRequired、Locked */
+        public type = "",
     ) {
         super(message);
     }
@@ -29,8 +31,9 @@ export const api = async <T = any>(path: string, body: unknown = {}): Promise<T>
         // 非 JSON 响应按 HTTP 错误处理
     }
     if (res.status === 403) throw new ApiError(json?.msg || "无权限", 403);
+    if (res.status === 429) throw new ApiError(json?.msg || "请求过于频繁，请稍后再试", 429);
     if (!res.ok || !json) throw new ApiError(json?.msg || `请求失败（${res.status}）`, res.status);
     if (json.code === 1001) throw new ApiError(json.msg || "请先登录", 401);
-    if (json.code) throw new ApiError(json.msg || "操作失败", 400);
+    if (json.code) throw new ApiError(json.msg || "操作失败", 400, json.data?.type ?? "");
     return json.data as T;
 };

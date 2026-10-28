@@ -8,7 +8,7 @@ import {
     ThunderboltOutlined,
     UserOutlined,
 } from "@ant-design/icons";
-import { AuthPage, ErrorComponent, ThemedLayout, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
+import { ErrorComponent, ThemedLayout, ThemedTitle, useNotificationProvider } from "@refinedev/antd";
 import "@refinedev/antd/dist/reset.css";
 import { Authenticated, Refine } from "@refinedev/core";
 import routerProvider, { CatchAllNavigate, DocumentTitleHandler, NavigateToResource } from "@refinedev/react-router";
@@ -17,6 +17,7 @@ import zhCN from "antd/locale/zh_CN";
 import "dayjs/locale/zh-cn";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { DashboardPage } from "./pages/dashboard";
+import { LoginPage } from "./pages/login";
 import { AuditList, TaskList } from "./pages/logs";
 import { ModelCreate, ModelEdit, ModelList } from "./pages/models";
 import { OrderList } from "./pages/orders";
@@ -88,18 +89,7 @@ export default function App() {
                                     </Authenticated>
                                 }
                             >
-                                <Route
-                                    path="/login"
-                                    element={
-                                        <AuthPage
-                                            type="login"
-                                            title={<ThemedTitle collapsed={false} text="管理后台" />}
-                                            registerLink={false}
-                                            forgotPasswordLink={false}
-                                            rememberMe={false}
-                                        />
-                                    }
-                                />
+                                <Route path="/login" element={<LoginPage />} />
                             </Route>
                         </Routes>
                         <DocumentTitleHandler handler={({ resource }) => `${resource?.meta?.label ?? "管理后台"} · 管理后台`} />

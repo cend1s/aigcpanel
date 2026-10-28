@@ -9,11 +9,13 @@ import { openDb } from "../src/db.js";
 import { EpayProvider } from "../src/pay/providers/epay.js";
 import { MockPayProvider } from "../src/pay/providers/mock.js";
 import { PaymentRegistry } from "../src/pay/types.js";
+import { SvgCaptchaService } from "../src/security/captcha.js";
+import { MemoryMailer } from "../src/security/mailer.js";
 import { ROLE_ADMIN } from "../src/users.js";
 
 process.env.NODE_ENV = "test";
 
-export const setup = async () => {
+export const setup = async (security: Partial<import("../src/context.js").AppContext["security"]> = {}) => {
     const db = openDb(":memory:");
     const filesDir = mkdtempSync(join(tmpdir(), "files-"));
     const mock = new MockProvider();
@@ -21,9 +23,20 @@ export const setup = async () => {
     const mockPay = new MockPayProvider();
     const epay = new EpayProvider({ gateway: "https://pay.example.com", pid: "1001", key: "secret" });
     const payments = new PaymentRegistry().register(mockPay).register(epay);
-    const app = buildApp({ db, providers, payments, baseUrl: "http://localhost", filesDir });
+    const mailer = new MemoryMailer();
+    const captcha = new SvgCaptchaService(db);
+    const app = buildApp({
+        db,
+        providers,
+        payments,
+        baseUrl: "http://localhost",
+        filesDir,
+        mailer,
+        captcha,
+        security: { requireEmailCode: false, rateLimit: false, trustProxy: false, appName: "Test", ...security },
+    });
     await app.ready();
-    return { app, db, mock, filesDir, mockPay, epay, providers };
+    return { app, db, mock, mailer, captcha, filesDir, mockPay, epay, providers };
 };
 
 export type Ctx = Awaited<ReturnType<typeof setup>>;
