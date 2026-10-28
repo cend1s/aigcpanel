@@ -7,8 +7,11 @@ export type User = {
     nickname: string;
     avatar: string;
     status: number;
+    role: number;
     quota: number;
 };
+
+export const ROLE_ADMIN = 100;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -22,6 +25,7 @@ const toUser = (row: any): User => ({
     nickname: row.nickname,
     avatar: row.avatar,
     status: Number(row.status),
+    role: Number(row.role ?? 1),
     quota: Number(row.quota),
 });
 

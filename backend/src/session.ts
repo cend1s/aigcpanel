@@ -24,3 +24,14 @@ export const tokenFromRequest = (req: FastifyRequest): string | undefined => {
 
 export const currentUser = (db: Db, req: FastifyRequest): User | null =>
     findUserByToken(db, tokenFromRequest(req));
+
+export type ApiReply = { code: number; msg: string; data: unknown };
+
+// 需要登录的接口：未登录返回 1001（客户端会据此刷新登录态）。
+// 只有 user_info 例外，它永远不返回 1001（见 routes/appManager.ts）。
+export const requireUser = (db: Db, req: FastifyRequest): User | ApiReply => {
+    const user = currentUser(db, req);
+    return user ?? { code: 1001, msg: "请先登录", data: {} };
+};
+
+export const isFailure = (v: User | ApiReply): v is ApiReply => "code" in v;

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Db } from "../db.js";
 import { userPayload } from "../payload.js";
+import { functionsFor } from "../plans.js";
 import { ok } from "../response.js";
 import { setSessionCookie, tokenFromRequest } from "../session.js";
 import { findUserByToken } from "../users.js";
@@ -28,7 +29,7 @@ export const appManagerRoutes = (app: FastifyInstance, db: Db) => {
     app.post("/api/app_manager/user_info", async (req) => {
         const token = tokenFromRequest(req) ?? "";
         const user = findUserByToken(db, token);
-        return ok(userPayload(user, token));
+        return ok(userPayload(user, token, user ? functionsFor(db, user.id) : {}));
     });
 
     // 在系统浏览器打开：用 api_token 换取网页会话 cookie，再跳转到站内页面

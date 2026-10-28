@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import type { Db } from "../db.js";
 import { userPayload } from "../payload.js";
+import { functionsFor } from "../plans.js";
 import { fail, ok } from "../response.js";
 import { COOKIE_NAME, setSessionCookie } from "../session.js";
 import { issueToken, login, register, revokeToken, UserError } from "../users.js";
@@ -19,7 +20,7 @@ export const authRoutes = (app: FastifyInstance, db: Db) => {
             const user = register(db, body.email ?? "", body.password ?? "", body.nickname);
             const token = issueToken(db, user.id, body.deviceUuid);
             setSessionCookie(reply, token);
-            return ok(userPayload(user, token));
+            return ok(userPayload(user, token, functionsFor(db, user.id)));
         } catch (e) {
             if (e instanceof UserError) {
                 return fail(e.message);
@@ -34,7 +35,7 @@ export const authRoutes = (app: FastifyInstance, db: Db) => {
             const user = login(db, body.email ?? "", body.password ?? "");
             const token = issueToken(db, user.id, body.deviceUuid);
             setSessionCookie(reply, token);
-            return ok(userPayload(user, token));
+            return ok(userPayload(user, token, functionsFor(db, user.id)));
         } catch (e) {
             if (e instanceof UserError) {
                 return fail(e.message);

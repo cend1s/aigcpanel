@@ -1,16 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildApp } from "../src/app.js";
-import { openDb } from "../src/db.js";
 import { safeRedirect } from "../src/routes/appManager.js";
+import { setup as setupCtx } from "./helpers.js";
 
-process.env.NODE_ENV = "test";
-
-const setup = async () => {
-    const app = buildApp(openDb(":memory:"));
-    await app.ready();
-    return app;
-};
+const setup = async () => (await setupCtx()).app;
 
 const post = (app: Awaited<ReturnType<typeof setup>>, url: string, body: object, headers = {}) =>
     app.inject({ method: "POST", url, payload: body, headers });
