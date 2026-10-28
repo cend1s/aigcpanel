@@ -1,4 +1,7 @@
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 import cookie from "@fastify/cookie";
+import fastifyStatic from "@fastify/static";
 import Fastify from "fastify";
 import type { AppContext } from "./context.js";
 import { accountRoutes } from "./routes/account.js";
@@ -31,5 +34,17 @@ export const buildApp = (ctx: AppContext) => {
         adminRoutes(instance, ctx);
         webRoutes(instance, ctx.db);
     });
+    // 管理后台（Refine 单页应用）：静态文件 + 前端路由回退到 index.html
+    // 相对路径按进程工作目录解析（@fastify/static 只接受绝对路径）
+    const adminDir = ctx.adminDir ? resolve(ctx.adminDir) : "";
+    if (adminDir && existsSync(adminDir)) {
+        app.register(fastifyStatic, { root: adminDir, prefix: "/admin/" });
+        app.setNotFoundHandler((req, reply) => {
+            if (req.method === "GET" && req.url.startsWith("/admin/") && !req.url.startsWith("/admin/assets/")) {
+                return reply.sendFile("index.html");
+            }
+            return reply.code(404).send({ code: 404, msg: "Not Found", data: {} });
+        });
+    }
     return app;
 };

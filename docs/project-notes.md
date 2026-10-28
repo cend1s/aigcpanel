@@ -137,3 +137,12 @@
 - `handoff.test.ts` 会读取目标页源码,校验草稿 key 仍然存在,防止上游改名后悄悄失效。
 - 注意:原项目已有 `ModelAgentButton`(用本地配置的文本模型生成文案);本项目的「电商文案」是云端计费、带电商模板的版本,两者并存。
 - 已在浏览器测试台验证两个按钮的草稿内容;**未在真实 Electron 里验证跳转后目标页的显示**。
+
+### 7.3 管理后台(2026-10)
+
+选型:**Refine 5 + Ant Design 5**(MIT,专门做增删改查后台;数据层对接现有 `/api/admin/*`,不直连数据库,流水与审计不会被绕开)。Directus、NocoDB 这类直连数据库的低代码工具因会绕开业务规则而排除。
+
+- 位置 `admin/`,构建后由后端托管在 `/admin/`;首个管理员用 `backend/scripts/create-admin.ts` 创建。
+- 页面:概览、用户(调额/流水/禁用)、订单(人工补单)、兑换码(批量生成)、套餐、云端模型(密钥脱敏)、云端任务、审计日志;Refine 内置文案已中文化。
+- 后端补充:列表统一 `{records,total}`、`admin/me|stats|task/list|audit/list|user/ledger|model/list|get|providers|plan/get`;LIKE 搜索正确转义通配符;禁止禁用自己;`@fastify/static` 用 10.1.8(低版本有路径穿越漏洞)。
+- 验证:后端 42 个测试;浏览器端到端 10 步(非管理员被拒、调额、流水、补单、生成兑换码、建套餐、建/改模型且密钥保留、审计)。

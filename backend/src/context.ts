@@ -10,4 +10,6 @@ export type AppContext = {
     baseUrl: string;
     // 供应商返回的文件落盘目录
     filesDir: string;
+    // 管理后台构建产物目录（admin/dist），存在时挂载到 /admin/
+    adminDir?: string;
 };

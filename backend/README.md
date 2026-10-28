@@ -8,7 +8,7 @@
 cd backend
 npm install
 npm run dev          # 默认 http://127.0.0.1:3100
-npm test             # 36 个测试（含桌面端云端驱动与后端的契约测试）
+npm test             # 42 个测试（含桌面端云端驱动与后端的契约测试）
 npm run typecheck
 npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建管理员
 ```
@@ -63,7 +63,9 @@ npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建
 - 支付：`/api/pay/methods|create|orders`，回调 `GET|POST /api/pay/notify/:provider`
 - 云端任务：`/api/cloud/task/submit|status`（`submit` 支持 `clientId` 幂等）
 
-管理接口（`role >= 100`，否则 403）：`/api/admin/` 下的 `user/list|adjust-quota|set-status`、`redemption/create|list`、`plan/list|save`、`model/save`、`order/list|complete`。调额、补单、改模型都会写 `audit_logs`。
+管理后台界面见 `../admin/`（Refine + Ant Design，构建后由本服务托管在 `/admin/`）。
+
+管理接口（`role >= 100`，否则 403），列表接口统一返回 `{ records, total }`：`/api/admin/` 下的 `me`、`stats`、`user/list|adjust-quota|set-status|ledger`、`redemption/create|list`、`plan/list|get|save`、`model/list|get|save|providers`、`order/list|complete`、`task/list`、`audit/list`。模型的密钥字段只返回脱敏值，保存时脱敏值或空值会保留原密钥。调额、补单、改模型都会写 `audit_logs`。
 
 ## 已知限制（上线前必须处理）
 
@@ -73,6 +75,5 @@ npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建
 - **订阅**：只支持单周期额度，没有按月重置；订阅用完后总是回落钱包（没有“禁止回落”开关）。
 - **视频模型**：只有同步的文本、图片供应商；视频厂商（异步轮询）的适配器尚未编写，但任务状态机、轮询、超时退款已支持异步供应商（见 `MockProvider` 的 `async` 模式）。
 - **文本流式输出**：`openai-chat` 为非流式；文案写作的逐字展示需要另加流式接口。
-- **管理后台**：目前只有 JSON 接口，没有管理界面。
 - **登录**：仅邮箱 + 密码，没有验证码、找回密码、登录限流。
 - 登录页在 webview 内通过 `window.$mapi.user.save()` 回写桌面端登录态，依赖 preload 暴露 `$mapi`，需桌面端联调确认。

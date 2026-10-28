@@ -4,6 +4,7 @@ export const config = {
     dbFile: process.env.DB_FILE ?? "data/app.db",
     // 对外访问地址，用于支付回调与跳转；生产环境必须配置为公网 https 地址
     baseUrl: process.env.BASE_URL ?? `http://127.0.0.1:${process.env.PORT ?? 3100}`,
+    adminDir: process.env.ADMIN_DIR ?? "../admin/dist",
     filesDir: process.env.FILES_DIR ?? "data/files",
     paymentMock: process.env.PAYMENT_MOCK === "1",
     epay: {

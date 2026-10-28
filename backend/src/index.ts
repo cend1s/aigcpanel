@@ -25,7 +25,7 @@ const payments = new PaymentRegistry();
 if (config.epay.gateway && config.epay.pid && config.epay.key) payments.register(new EpayProvider(config.epay));
 if (config.paymentMock) payments.register(new MockPayProvider());
 
-const app = buildApp({ db, providers, payments, baseUrl: config.baseUrl, filesDir: config.filesDir });
+const app = buildApp({ db, providers, payments, baseUrl: config.baseUrl, filesDir: config.filesDir, adminDir: config.adminDir });
 
 // 每分钟扫描一次悬挂任务，保证崩溃或上游无响应时额度不会一直被冻结
 setInterval(() => {
