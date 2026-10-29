@@ -2,6 +2,7 @@
 //   { "type": "per_call", "amount": 20 }
 //   { "type": "per_token", "inputPer1k": 1, "outputPer1k": 3 }
 //   { "type": "per_unit", "unit": "second", "amount": 5 }   （按秒/张等，数量取自 usage.units）
+//   unit 为 "char"（按字，语音合成）或 "minute"（按分钟，语音识别）时预估数量会自动换算
 export type Pricing =
     | { type: "per_call"; amount: number }
     | { type: "per_token"; inputPer1k: number; outputPer1k: number }
@@ -22,8 +23,16 @@ export const estimateCost = (p: Pricing, param: any): number => {
             const output = Number(param?.max_tokens ?? param?.maxTokens ?? 1024);
             return up((input / 1000) * p.inputPer1k + (output / 1000) * p.outputPer1k);
         }
-        case "per_unit":
-            return up(p.amount * Number(param?.units ?? param?.duration ?? 1));
+        case "per_unit": {
+            // 数量：客户端声明的 units > 按字计价时取文本长度 > 音视频时长（秒，按分钟计价时换算） > 1
+            let units = Number(param?.units);
+            if (!(units > 0)) {
+                const duration = Number(param?.duration);
+                if (p.unit === "char") units = String(param?.text ?? param?.prompt ?? "").length;
+                else if (duration > 0) units = p.unit === "minute" ? Math.ceil(duration / 60) : duration;
+            }
+            return up(p.amount * Math.max(units || 0, 1));
+        }
         default:
             throw new Error("未知的计价类型");
     }

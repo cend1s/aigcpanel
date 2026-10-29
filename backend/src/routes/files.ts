@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { FastifyInstance } from "fastify";
 import { FILE_NAME_RE } from "../cloud/files.js";
 
-const TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", webp: "image/webp" };
+const TYPES: Record<string, string> = { png: "image/png", jpg: "image/jpeg", webp: "image/webp", mp3: "audio/mpeg", wav: "audio/wav" };
 
 export const fileRoutes = (app: FastifyInstance, dir: string) => {
     app.get("/files/:name", async (req, reply) => {

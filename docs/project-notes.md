@@ -129,6 +129,14 @@
 
 仍缺:视频厂商适配器(异步)、图生图等真实厂商联调、`ServerCloudRecord.functions` 的参数表单定义需与各厂商参数对齐。
 
+### 7.1.1 云端语音合成 / 语音识别(2026-10)
+
+- 后端 `cloud/providers/openaiAudio.ts`:`openai-tts`(`/audio/speech`,音频落盘经 `/files` 下载,用量=字数)、`openai-asr`(multipart 上传 `/audio/transcriptions`,`verbose_json` 分段转成毫秒 `{records:[{start,end,text}]}`,用量=秒或分钟)。`mock` 供应商对 `soundTts`/`asr` 返回静音 wav / 固定文本,便于演示。
+- 计价:`per_unit` 的 `unit` 为 `char` 时按文本长度预扣,为 `minute` 时按时长换算;结算按上游实际用量多退少补。
+- 桌面端 `CloudServer` 新增 `soundTts`、`asr`;识别前用 ffmpeg 转 16kHz 单声道 32kbps mp3(≤10MB,约 40 分钟)再以 data URL 上传。
+- 验证:后端测试 56 个通过;runner 单元测试 7 个;真实 Electron 中经 `serverStore.call` 调用云端 TTS(拿到本地 wav)与 ASR(拿到 records)均成功。
+- 未做:声音克隆(`soundClone`)的云端版、长音频自动分段。
+
 ### 7.2 文案 → 配音 → 口播视频:原项目已有「一键合成」,只补衔接(2026-10)
 
 原项目的 `Apps/VideoGenFlow`(「一键合成流程」,`/video?tab=VideoGenFlow`)本来就是 文本 → 配音 → 数字人视频,另有 `LongTextTts`(长文本转音频)。因此**不新写流水线**,只让电商文案页把结果送过去:

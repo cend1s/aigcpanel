@@ -28,8 +28,20 @@ AIGCPanel 服务端 · 本地试用包
 3. 管理后台 → 用户 → 给自己调额（例如 +10000）
 4. 桌面端 → 工具 → 营销创作 → 电商文案，选这个模型生成（mock 模型只会回显提示词）
 
-接真实模型：供应商选 openai-chat（文本）或 openai-image（文生图），
+接真实模型：供应商选 openai-chat（文本）、openai-image（文生图）、
+openai-tts（语音合成，调 /audio/speech）或 openai-asr（语音识别，调 /audio/transcriptions），
 供应商配置填 {"baseUrl": "https://你的接口地址/v1", "apiKey": "你的密钥", "model": "模型名"}
+
+语音合成示例（桌面端 → 数字人 → 语音音色 → 新增，模型选这个，再到「语音合成」使用）：
+  功能定义：{"soundTts": {"param": [{"name": "speaker", "type": "select", "title": "音色",
+            "defaultValue": "alloy", "options": [{"label": "Alloy", "value": "alloy"}, {"label": "Nova", "value": "nova"}]}]}}
+  供应商配置可加 "voice"（默认音色）、"format"（mp3 或 wav）
+  计价：按次 {"type": "per_call", "amount": 20}，或按字 {"type": "per_unit", "unit": "char", "amount": 1}
+语音识别示例（桌面端 → 工具 → 语音识别）：
+  功能定义：{"asr": {"param": []}}
+  供应商配置可加 "language"（如 zh）；上游不支持分段时间轴时加 "responseFormat": "json"
+  计价：按分钟 {"type": "per_unit", "unit": "minute", "amount": 10}（按上游返回的实际时长结算）
+  桌面端会先把音频/视频转成 16kHz 单声道 mp3 再上传，单次最长约 40 分钟
 
 五、端口被占用
 修改启动脚本里的 PORT，同时桌面端需要连接同一个地址（当前版本固定为 3100，建议先保持 3100）。

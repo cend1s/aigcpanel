@@ -29,7 +29,7 @@ npx tsx scripts/create-admin.ts admin@example.com 'a-strong-password'   # 创建
 | `pay/orders.ts` | 订单创建与统一完成逻辑：事务内锁定、通道与金额校验、CAS，重复/并发回调只入账一次 |
 | `pay/providers/*` | 支付通道（`PaymentProvider` 接口）：`epay`（易支付协议）、`mock`（开发） |
 | `cloud/tasks.ts` | 云端任务状态机：预扣 → 提交 → 结算/退款；兜底扫描 |
-| `cloud/providers/*` | 云端模型供应商（`CloudProvider` 接口）：`openai-chat`（文本）、`openai-image`（文生图）、`mock` |
+| `cloud/providers/*` | 云端模型供应商（`CloudProvider` 接口）：`openai-chat`（文本）、`openai-image`（文生图）、`openai-tts`（语音合成）、`openai-asr`（语音识别）、`mock` |
 | `cloud/pricing.ts` | 计价：按次 / 按 token / 按单位，预估与结算 |
 
 新增支付通道或模型厂商：实现对应接口，在 `src/index.ts` 注册即可，不影响计费与任务逻辑。

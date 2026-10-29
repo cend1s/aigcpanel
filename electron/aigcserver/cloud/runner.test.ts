@@ -73,3 +73,24 @@ test("超时与取消", async () => {
     const m = make([running], { isCancelled: () => ++n > 2 });
     await assert.rejects(runCloudFunction(m.deps, target, "textToVideo", { id: "t", prompt: "x" }), (e: any) => e.type === "Cancelled");
 });
+
+test("语音合成：文本随任务提交，结果音频下载到本地", async () => {
+    const { deps, calls } = make([ok({ id: "c", status: "succeeded", result: { url: "https://srv/files/a.mp3" } })]);
+    const r = await runCloudFunction(deps, target, "soundTts", { id: "t", text: "你好", param: { speaker: "nova" } });
+    assert.deepEqual(r, { url: "/tmp/a.mp3" });
+    assert.deepEqual(calls[0].data.param, { type: "soundTts", prompt: "", param: { speaker: "nova" }, text: "你好" });
+});
+
+test("语音识别：本地音频转 data URL 上传，返回识别记录而不是文件", async () => {
+    const records = [{ start: 0, end: 1500, text: "大家好" }];
+    const { deps, calls } = make([ok({ id: "c", status: "succeeded", result: { records } })], {
+        readAudioAsDataUrl: async (p) => `data:audio/mpeg;base64,FROM:${p}`,
+    });
+    const r = await runCloudFunction(deps, target, "asr", { id: "t", audio: "/home/u/a.wav" });
+    assert.deepEqual(r, { records });
+    assert.equal(calls[0].data.param.audio, "data:audio/mpeg;base64,FROM:/home/u/a.wav");
+    await assert.rejects(
+        runCloudFunction(make([ok({ id: "c", status: "succeeded", result: {} })]).deps, target, "asr", { id: "t", audio: "https://x/a.mp3" }),
+        (e: any) => e.type === "EmptyResult",
+    );
+});

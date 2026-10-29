@@ -3,6 +3,7 @@ import { sweepTasks } from "./cloud/tasks.js";
 import { MockProvider } from "./cloud/providers/mock.js";
 import { createFileStore } from "./cloud/files.js";
 import { OpenAiImageProvider } from "./cloud/providers/openaiImage.js";
+import { OpenAiAsrProvider, OpenAiTtsProvider } from "./cloud/providers/openaiAudio.js";
 import { OpenAiChatProvider } from "./cloud/providers/openaiChat.js";
 import { ProviderRegistry } from "./cloud/types.js";
 import { config } from "./config.js";
@@ -19,8 +20,10 @@ const db = openDb(config.dbFile);
 const files = createFileStore(config.filesDir, config.baseUrl);
 const providers = new ProviderRegistry()
     .register(new OpenAiChatProvider())
-    .register(new OpenAiImageProvider(files));
-if (config.mockProvider) providers.register(new MockProvider());
+    .register(new OpenAiImageProvider(files))
+    .register(new OpenAiAsrProvider())
+    .register(new OpenAiTtsProvider(files));
+if (config.mockProvider) providers.register(new MockProvider(files));
 
 // 支付通道：按环境变量启用
 const payments = new PaymentRegistry();

@@ -14,6 +14,8 @@ export type CloudRunDeps = {
     download: (url: string) => Promise<string>;
     /** 读取本地图片并转成 data URL */
     readImageAsDataUrl: (path: string) => Promise<string>;
+    /** 读取本地音频并转成 data URL（语音识别） */
+    readAudioAsDataUrl?: (path: string) => Promise<string>;
     sleep: (ms: number) => Promise<void>;
     now: () => number;
     isCancelled: () => boolean;
@@ -36,7 +38,8 @@ export class CloudRunError extends Error {
 const isRemoteRef = (s: string) => /^(https?:|data:)/i.test(s);
 
 /**
- * 运行一次云端函数（textToImage / imageToImage / textToVideo / imageToVideo ...）。
+ * 运行一次云端函数（textToImage / imageToImage / textToVideo / imageToVideo / soundTts / asr）。
+ * 生成类返回下载到本地的文件 { url }；语音识别返回 { records }（毫秒时间轴）。
  * 以桌面端任务 id 作为 clientId：任务被重试或应用重启后重新提交，后端会返回同一个云端任务，
  * 不会重复扣费。
  */
@@ -44,9 +47,9 @@ export const runCloudFunction = async (
     deps: CloudRunDeps,
     target: { name: string; version: string },
     fn: string,
-    data: { id: string; prompt?: string; param?: any; image?: string },
+    data: { id: string; prompt?: string; param?: any; image?: string; text?: string; audio?: string },
     option: CloudRunOption = {},
-): Promise<{ url: string }> => {
+): Promise<{ url?: string; records?: any[] }> => {
     const pollInterval = option.pollInterval ?? 2000;
     const timeout = option.timeout ?? 30 * 60 * 1000;
 
@@ -54,6 +57,18 @@ export const runCloudFunction = async (
     if (data.image) {
         // 云端模型访问不到本地文件：本地路径转成 data URL 随请求提交
         param.image = isRemoteRef(data.image) ? data.image : await deps.readImageAsDataUrl(data.image);
+    }
+    if (data.text !== undefined) {
+        param.text = data.text;
+    }
+    if (data.audio) {
+        if (isRemoteRef(data.audio)) {
+            param.audio = data.audio;
+        } else if (deps.readAudioAsDataUrl) {
+            param.audio = await deps.readAudioAsDataUrl(data.audio);
+        } else {
+            throw new CloudRunError("当前环境不支持上传音频");
+        }
     }
 
     const call = async (url: string, body: Record<string, any>) => {
@@ -87,6 +102,13 @@ export const runCloudFunction = async (
     }
     if (task.status === "failed") {
         throw new CloudRunError(task.error || "云端任务失败，额度已退回", "Failed");
+    }
+    if (fn === "asr") {
+        const records = task.result?.records;
+        if (!Array.isArray(records)) {
+            throw new CloudRunError("云端没有返回识别结果", "EmptyResult");
+        }
+        return { records };
     }
     const url = task.result?.url;
     if (typeof url !== "string" || !url) {
