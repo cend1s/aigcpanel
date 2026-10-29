@@ -1,7 +1,7 @@
+import { normalizeBaseUrl } from "./baseUrl.js";
 import type { FileStore } from "../files.js";
 import type { CloudProvider, ModelRow, QueryResult, SubmitResult } from "../types.js";
 
-const trimBase = (baseUrl: unknown) => String(baseUrl).replace(/\/$/, "");
 
 const AUDIO_EXT: Record<string, string> = {
     "audio/mpeg": "mp3",
@@ -59,7 +59,7 @@ export class OpenAiAsrProvider implements CloudProvider {
         if (lang) {
             form.append("language", String(lang));
         }
-        const res = await this.fetchImpl(`${trimBase(baseUrl)}/audio/transcriptions`, {
+        const res = await this.fetchImpl(`${normalizeBaseUrl(baseUrl)}/audio/transcriptions`, {
             method: "POST",
             headers: { Authorization: `Bearer ${apiKey}` },
             body: form,
@@ -127,7 +127,7 @@ export class OpenAiTtsProvider implements CloudProvider {
         const p = param?.param ?? {};
         const ext = format === "wav" ? "wav" : "mp3";
         const speed = Number(p.speed);
-        const res = await this.fetchImpl(`${trimBase(baseUrl)}/audio/speech`, {
+        const res = await this.fetchImpl(`${normalizeBaseUrl(baseUrl)}/audio/speech`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
             body: JSON.stringify({

@@ -31,6 +31,10 @@ AIGCPanel 服务端 · 本地试用包
 接真实模型：供应商选 openai-chat（文本）、openai-image（文生图）、
 openai-tts（语音合成，调 /audio/speech）或 openai-asr（语音识别，调 /audio/transcriptions），
 供应商配置填 {"baseUrl": "https://你的接口地址/v1", "apiKey": "你的密钥", "model": "模型名"}
+  baseUrl 填到 /v1 为止（填成 .../v1/chat/completions 也能自动识别）
+  例：硅基流动 {"baseUrl": "https://api.siliconflow.cn/v1", "apiKey": "sk-...", "model": "Qwen/Qwen3-8B",
+               "extraBody": {"enable_thinking": false}}
+  extraBody 会原样带给上游，Qwen3 等思考模型建议关闭思考，否则回答慢且可能被截断
 
 语音合成示例（桌面端 → 数字人 → 语音音色 → 新增，模型选这个，再到「语音合成」使用）：
   功能定义：{"soundTts": {"param": [{"name": "speaker", "type": "select", "title": "音色",

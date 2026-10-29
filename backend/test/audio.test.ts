@@ -121,3 +121,34 @@ test("按字计价的语音合成任务：先按文本长度预扣，成功后�
     assert.equal(r.data.cost, 6);
     assert.equal(getBalance(ctx.db, u.id)!.quota, 94);
 });
+
+test("baseUrl 填成完整接口地址也能用", async () => {
+    const { normalizeBaseUrl } = await import("../src/cloud/providers/baseUrl.js");
+    for (const u of [
+        "https://api.siliconflow.cn/v1",
+        "https://api.siliconflow.cn/v1/",
+        "https://api.siliconflow.cn/v1/chat/completions",
+        " https://api.siliconflow.cn/v1/chat/completions/ ",
+        "https://api.siliconflow.cn/v1/images/generations",
+        "https://api.siliconflow.cn/v1/audio/speech",
+        "https://api.siliconflow.cn/v1/audio/transcriptions",
+    ]) {
+        assert.equal(normalizeBaseUrl(u), "https://api.siliconflow.cn/v1", u);
+    }
+});
+
+test("文本供应商：extraBody 原样合并进请求体", async () => {
+    const { OpenAiChatProvider } = await import("../src/cloud/providers/openaiChat.js");
+    let seen!: Seen;
+    const up = await withUpstream((s, res) => {
+        seen = s;
+        res.setHeader("content-type", "application/json");
+        res.end(JSON.stringify({ choices: [{ message: { content: "好" } }], usage: { prompt_tokens: 1, completion_tokens: 1 } }));
+    });
+    const model: any = { providerConfig: { baseUrl: `${up.url}/chat/completions`, apiKey: "K", model: "Qwen/Qwen3-8B", extraBody: { enable_thinking: false } } };
+    const r: any = await new OpenAiChatProvider().submit(model, { prompt: "hi" });
+    assert.equal(r.result.text, "好");
+    assert.equal(seen.url, "/v1/chat/completions");
+    assert.equal(JSON.parse(seen.raw.toString()).enable_thinking, false);
+    up.close();
+});

@@ -1,3 +1,4 @@
+import { normalizeBaseUrl } from "./baseUrl.js";
 import type { FileStore } from "../files.js";
 import type { CloudProvider, ModelRow, QueryResult, SubmitResult } from "../types.js";
 
@@ -22,7 +23,7 @@ export class OpenAiImageProvider implements CloudProvider {
         }
         const w = Number(param?.param?.width);
         const h = Number(param?.param?.height);
-        const res = await this.fetchImpl(`${String(baseUrl).replace(/\/$/, "")}/images/generations`, {
+        const res = await this.fetchImpl(`${normalizeBaseUrl(baseUrl)}/images/generations`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
             body: JSON.stringify({
