@@ -48,8 +48,9 @@ export const CloudServer = function (this: any) {
             msg: "ok",
             data: {
                 httpUrl: null,
-                content: this.ServerInfo?.config?.content || "",
-                functions: this.ServerInfo?.config?.functions || {},
+                // 参数定义来自服务端 server/all，由 serverCloud store 放在 cloudConfig 里
+                content: this.ServerInfo?.config?.cloudConfig?.content || "",
+                functions: this.ServerInfo?.config?.cloudConfig?.functions || {},
             },
         };
     };

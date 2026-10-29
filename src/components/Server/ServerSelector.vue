@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useServerStore } from "../../store/modules/server";
-import { EnumServerStatus } from "../../types/Server";
+import { EnumServerStatus, EnumServerType } from "../../types/Server";
 
 import { Dialog } from "../../lib/dialog";
 import { mapError } from "../../lib/error";
@@ -36,9 +36,15 @@ const dotClass = (server: any) => {
 const props = defineProps<{
     functionName: string;
 }>();
+// 本地模型与服务端（管理后台）配置的云端模型分两组显示
 const recordsFilter = computed(() => {
-    return serverStore.records.filter((s) =>
-        s.functions.includes(props.functionName),
+    return serverStore.records.filter(
+        (s) => s.type !== EnumServerType.CLOUD && s.functions.includes(props.functionName),
+    );
+});
+const cloudRecordsFilter = computed(() => {
+    return serverStore.records.filter(
+        (s) => s.type === EnumServerType.CLOUD && s.functions.includes(props.functionName),
     );
 });
 
@@ -61,12 +67,8 @@ const valueStatus = computed(() => {
             ?.status || EnumServerStatus.STOPPED
     );
 });
-let showCloudOptgroup = false;
-
 const hasRecords = computed(() => {
-    let count = recordsFilter.value.length;
-    
-    return count > 0;
+    return recordsFilter.value.length + cloudRecordsFilter.value.length > 0;
 });
 const emit = defineEmits({
     update: (config: any) => true,
@@ -147,7 +149,7 @@ watch(
                 </div>
             </a-option>
         </a-optgroup>
-        <a-optgroup v-if="showCloudOptgroup" :label="$t('model.cloudModel')">
+        <a-optgroup :label="$t('model.cloudModel')">
             <a-option
                 v-for="server in cloudRecordsFilter"
                 :key="server.key"
@@ -164,11 +166,12 @@ watch(
                     </div>
                 </div>
             </a-option>
+            <a-option v-if="cloudRecordsFilter.length === 0" disabled>
+                <div class="text-xs py-2">
+                    {{ $t("empty.noCloudModel") }}
+                </div>
+            </a-option>
         </a-optgroup>
-        <a-optgroup
-            v-if="!showCloudOptgroup"
-            :label="$t('model.upgradeProForCloud')"
-        ></a-optgroup>
         <template #label="{ data }">
             <div class="text-sm flex items-center flex-nowrap truncate no-wrap">
                 <div

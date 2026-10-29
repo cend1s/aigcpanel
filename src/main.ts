@@ -18,6 +18,7 @@ import "./style.less";
 import { CommonComponents } from "./components/common";
 import { useSettingStore } from "./store/modules/setting";
 import { useServerStore } from "./store/modules/server";
+import { useServerCloudStore } from "./store/modules/serverCloud";
 import { useModelStore } from "./module/Model/store/model";
 import { TaskManager } from "./task";
 
@@ -133,6 +134,8 @@ app.config.globalProperties.$mapi = window.$mapi;
 app.config.globalProperties.$dialog = Dialog;
 app.config.globalProperties.$t = t as any;
 TaskManager.init();
+// 启动时就拉取服务端配置的云端模型，并入「AI模型」列表与各功能的模型选择器
+useServerCloudStore();
 
 // 注册工作流 channel 监听器：主进程调度 → 渲染进程执行
 window["__page"].channel["workflow:execute"] = async ({

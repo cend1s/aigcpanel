@@ -553,5 +553,6 @@
     "offlineAuth.revoke": "Revoke license",
     "offlineAuth.revokeConfirm": "The model cannot run offline after revoking. Continue?",
     "offlineAuth.revoked": "License revoked. Restart the model to apply.",
-    "offlineAuth.revokeFailed": "Failed to revoke license"
+    "offlineAuth.revokeFailed": "Failed to revoke license",
+    "empty.noCloudModel": "No cloud model (add one in the server admin console)"
 }

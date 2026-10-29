@@ -69,6 +69,14 @@ const getOrCreateServerRuntime = (record: ServerRecord): ServerRuntime => {
     serverRuntime.value?.set(record.key, defaultValue);
     return serverRuntime.value?.get(record.key) as ServerRuntime;
 };
+// 服务端（管理后台）配置的云端模型：由 serverCloud store 拉取后合并进 records，
+// 不写入本地存储；本地列表重新加载时会重新合并。
+let cloudRecords: ServerRecord[] = [];
+const withCloudRecords = (records: ServerRecord[]) => [
+    ...records.filter((r) => r.type !== EnumServerType.CLOUD),
+    ...cloudRecords,
+];
+
 const deleteServerRuntime = (record: ServerRecord) => {
     serverRuntime.value?.delete(record.key);
 };
@@ -274,9 +282,7 @@ export const serverStore = defineStore("server", {
                     record.status = createServerStatus(record);
                     record.runtime = getServerRuntimeComputedValue(record);
                 });
-                this.records = records.filter((record: ServerRecord) => {
-                    return record.type !== EnumServerType.CLOUD;
-                });
+                this.records = withCloudRecords(records);
             });
             taskStore.onChange(null, (bizId, type) => {
                 if (type === "requestCancel") {
@@ -433,9 +439,7 @@ export const serverStore = defineStore("server", {
                     record.status = createServerStatus(record);
                     record.runtime = getServerRuntimeComputedValue(record);
                 });
-                this.records = records.filter((record: ServerRecord) => {
-                    return record.type !== EnumServerType.CLOUD;
-                });
+                this.records = withCloudRecords(records);
             });
             await this.refresh();
             this.autoPrepare().then();
@@ -734,8 +738,20 @@ export const serverStore = defineStore("server", {
             // 新增模型后按需补齐权重（配置了 prepare 且未就绪的模型自动开始下载）
             this.autoPrepare().then();
         },
+        /** 用服务端最新的云端模型替换列表里的云端模型 */
+        setCloudRecords(records: ServerRecord[]) {
+            records.forEach((record) => {
+                record.status = createServerStatus(record);
+                record.runtime = getServerRuntimeComputedValue(record);
+            });
+            cloudRecords = records;
+            this.records = withCloudRecords(this.records);
+        },
         async sync() {
-            const savedRecords = toRaw(cloneDeep(this.records));
+            // 云端模型以服务端为准，不保存到本地
+            const savedRecords = toRaw(
+                cloneDeep(this.records.filter((r) => r.type !== EnumServerType.CLOUD)),
+            );
             savedRecords.forEach((record) => {
                 record.status = undefined;
                 record.runtime = undefined;

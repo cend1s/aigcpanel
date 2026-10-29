@@ -553,5 +553,6 @@
     "offlineAuth.revoke": "撤销授权",
     "offlineAuth.revokeConfirm": "撤销后该模型将无法离线运行，确定撤销授权吗？",
     "offlineAuth.revoked": "授权已撤销，重启模型后生效",
-    "offlineAuth.revokeFailed": "撤销授权失败"
+    "offlineAuth.revokeFailed": "撤销授权失败",
+    "empty.noCloudModel": "没有可用云端模型（可在服务端管理后台添加）"
 }
