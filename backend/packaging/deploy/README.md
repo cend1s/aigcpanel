@@ -1,4 +1,7 @@
-# 服务端自动部署
+# 服务端自动部署（已停用）
+
+> 目前改用本地包试用，GitHub 自动部署流程（deploy-server.yml）已删除。以后需要上云时，
+> 从 git 历史恢复该文件即可；`remote-install.sh` 保留，也可以手动上传后执行。
 
 推送 `backend/`、`admin/` 的改动后，GitHub Actions（`.github/workflows/deploy-server.yml`）会：
 跑后端测试 → 打包 linux-x64 服务端 → 通过 SSH 上传 → 在服务器上执行 `remote-install.sh`。
