@@ -11,6 +11,7 @@ import { PagePayment } from "./payment";
 import { PageMonitor } from "./monitor";
 import { PageLog } from "./log";
 import { PageComfyUIView } from "./comfyui-view";
+import { PageLiveStage } from "./live-stage";
 
 const Pages = {
     user: PageUser,
@@ -21,6 +22,7 @@ const Pages = {
     monitor: PageMonitor,
     log: PageLog,
     "comfyui-view": PageComfyUIView,
+    "live-stage": PageLiveStage,
 };
 
 /**

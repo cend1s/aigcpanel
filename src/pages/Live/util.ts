@@ -115,3 +115,11 @@ export const parseGeneratedTalks = (raw: string): string[] => {
         .map((s) => s.replace(/^\s*(?:[-*•]|\d+[.、)）])\s*/, "").trim())
         .filter(Boolean);
 };
+
+/** 本地路径转成 <video>/<audio> 可用的 file:// 地址（兼容 Windows 盘符） */
+export const toFileUrl = (p: string) => {
+    if (!p || /^(https?|file|data|blob):/i.test(p)) return p;
+    const path = p.replace(/\\/g, "/");
+    const enc = encodeURI(path).replace(/#/g, "%23").replace(/\?/g, "%3F");
+    return /^[A-Za-z]:\//.test(path) ? `file:///${enc}` : `file://${enc}`;
+};

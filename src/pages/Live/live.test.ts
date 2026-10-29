@@ -67,3 +67,11 @@ test("违禁词高亮：先转义原文，尖括号不会变成标签", () => {
     const html = highlightBlackWordsHtml('<img src=x onerror="a">最好', ["最好"]);
     assert.equal(html, '&lt;img src=x onerror=&quot;a&quot;&gt;<span class="live-black-word">最好</span>');
 });
+
+test("本地路径转 file 地址：Windows 盘符、空格与中文", async () => {
+    const { toFileUrl } = await import("./util.js");
+    assert.equal(toFileUrl("C:\\Users\\张三\\a b.mp3"), "file:///C:/Users/%E5%BC%A0%E4%B8%89/a%20b.mp3");
+    assert.equal(toFileUrl("/home/u/a.mp3"), "file:///home/u/a.mp3");
+    assert.equal(toFileUrl("https://x/a.mp3"), "https://x/a.mp3");
+    assert.equal(toFileUrl("/tmp/第#1?.wav"), "file:///tmp/%E7%AC%AC%231%3F.wav");
+});

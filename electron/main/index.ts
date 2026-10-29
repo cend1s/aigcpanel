@@ -162,8 +162,9 @@ async function createWindow() {
         backgroundColor: await AppsMain.defaultDarkModeBackgroundColor(),
         titleBarStyle: "hidden",
         trafficLightPosition: { x: 10, y: 11 },
-        backgroundThrottling: false,
         webPreferences: {
+            // 最小化或隐藏到托盘时不降速定时器：直播引擎、任务轮询都跑在主窗口里
+            backgroundThrottling: false,
             preload: preloadDefault,
             // Warning: Enable nodeIntegration and disable contextIsolation is not secure in production
             nodeIntegration: true,

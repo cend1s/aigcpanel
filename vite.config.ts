@@ -123,6 +123,7 @@ export default defineConfig(({command}) => {
                         "page/setup.html",
                         "page/user.html",
                         "page/log.html",
+                        "page/live-stage.html",
                     ];
                     files.forEach(f => {
                         const p = path.resolve(__dirname, "dist", f);
@@ -216,6 +217,7 @@ export default defineConfig(({command}) => {
                     setup: path.resolve(__dirname, "page/setup.html"),
                     payment: path.resolve(__dirname, "page/payment.html"),
                     monitor: path.resolve(__dirname, "page/monitor.html"),
+                    "live-stage": path.resolve(__dirname, "page/live-stage.html"),
                     log: path.resolve(__dirname, "page/log.html"),
                 },
             },

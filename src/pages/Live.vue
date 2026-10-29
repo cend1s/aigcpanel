@@ -3,6 +3,7 @@ import { onMounted, ref, watch } from "vue";
 import VoiceManage from "../components/Voice/VoiceManage.vue";
 import Router from "../router";
 import { LiveVoiceService } from "../service/VoiceService";
+import LiveConsole from "./Live/LiveConsole.vue";
 import LiveEvent from "./Live/LiveEvent.vue";
 import LiveKnowledge from "./Live/LiveKnowledge.vue";
 import LiveTalk from "./Live/LiveTalk.vue";
@@ -58,10 +59,7 @@ watch(() => Router.currentRoute.value.query.tab, syncTab);
             </div>
         </div>
         <div class="flex-grow h-full overflow-y-auto">
-            <div v-if="tab === 'console'" class="p-5">
-                <div class="text-3xl font-bold mb-4">{{ $t("live.console") }}</div>
-                <a-alert>{{ $t("live.consoleComing") }}</a-alert>
-            </div>
+            <LiveConsole v-if="tab === 'console'" />
             <VideoTemplate v-else-if="tab === 'avatar'" />
             <VoiceManage
                 v-else-if="tab === 'voice'"
