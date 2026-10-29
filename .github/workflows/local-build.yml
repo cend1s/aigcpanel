@@ -64,8 +64,14 @@ jobs:
         env:
           TARGET_ARCH: ${{ matrix.arch }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # 客户端连接的服务端：优先用变量 SERVER_URL，其次用部署密钥里的 SERVER_HOST，都没有则连本机 3100
+          SERVER_URL: ${{ vars.SERVER_URL }}
+          SERVER_HOST: ${{ secrets.SERVER_HOST }}
         run: |
           export BUILD_VERSION="r${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
+          if [ -n "$SERVER_URL" ]; then export VITE_BASE_URL="$SERVER_URL";
+          elif [ -n "$SERVER_HOST" ]; then export VITE_BASE_URL="http://$SERVER_HOST:3100"; fi
+          echo "客户端服务端地址：${VITE_BASE_URL:-http://127.0.0.1:3100}"
           npx cross-env VITE_RELEASE=1 npx vite build
           node scripts/gen-electron-builder-config.mjs
           if [ "$RUNNER_OS" = "Windows" ]; then PLATFORM=--win; else PLATFORM=--mac; fi
