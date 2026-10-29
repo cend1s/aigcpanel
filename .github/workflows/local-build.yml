@@ -2,11 +2,13 @@ name: Local Trial Build
 
 # 直接用本仓库代码出“本地试用包”：桌面端安装包 + 服务端（后端 + 管理后台 + 便携 Node）。
 # 不签名、不公证、不依赖私有仓库与密钥。产物在 Actions 运行页面的 Artifacts 里下载。
+# 推送代码不自动打包。需要打包时推送一个 build- 开头的标签（git tag build-xxx && git push origin build-xxx），
+# 或在 Actions 页面手动运行（该按钮要求工作流文件在默认分支上）。
 on:
   workflow_dispatch:
   push:
-    branches:
-      - claude/nifty-rubin-ix03iu
+    tags:
+      - build-*
 
 concurrency:
   group: local-build-${{ github.ref }}

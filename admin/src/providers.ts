@@ -1,5 +1,6 @@
 import type { AuthProvider, CrudFilter, DataProvider } from "@refinedev/core";
 import { api, ApiError, tokenStore } from "./api";
+import { formToModel, modelToForm } from "./pages/modelForm";
 
 // ── 资源字段转换：后端存“分”和 JSON 对象，表单里用“元”和 JSON 文本 ─────────────
 const json = (v: unknown) => JSON.stringify(v ?? {}, null, 2);
@@ -14,12 +15,7 @@ const parseJson = (s: unknown, field: string) => {
 
 const mapIn: Record<string, (r: any) => any> = {
     plan: (r) => ({ ...r, priceYuan: r.priceCents / 100, functionsJson: json(r.functions) }),
-    model: (r) => ({
-        ...r,
-        functionsJson: json(r.functions),
-        providerConfigJson: json(r.providerConfig),
-        pricingJson: json(r.pricing),
-    }),
+    model: (r) => ({ id: r.id, ...modelToForm(r) }),
 };
 const mapOut: Record<string, (v: any) => any> = {
     plan: ({ priceYuan, functionsJson, ...v }) => ({
@@ -27,14 +23,11 @@ const mapOut: Record<string, (v: any) => any> = {
         priceCents: Math.round(Number(priceYuan) * 100),
         functions: parseJson(functionsJson, "功能权限"),
     }),
-    model: ({ functionsJson, providerConfigJson, pricingJson, ...v }) => ({
-        ...v,
-        functions: parseJson(functionsJson, "功能定义"),
-        providerConfig: parseJson(providerConfigJson, "供应商配置"),
-        pricing: parseJson(pricingJson, "计价规则"),
-    }),
+    model: ({ id, ...v }) => ({ ...(id ? { id } : {}), ...formToModel(v) }),
 };
 const inOf = (resource: string) => mapIn[resource] ?? ((r: any) => r);
+// 列表直接展示后端原始字段；模型的表单拆分只用于编辑页
+const listInOf = (resource: string) => (resource === "model" ? (r: any) => r : inOf(resource));
 const outOf = (resource: string) => mapOut[resource] ?? ((v: any) => v);
 
 const filtersToBody = (filters?: CrudFilter[]) =>
@@ -53,7 +46,7 @@ export const dataProvider: DataProvider = {
             pageSize: pagination?.pageSize ?? 20,
             ...filtersToBody(filters),
         });
-        return { data: r.records.map(inOf(resource)), total: r.total };
+        return { data: r.records.map(listInOf(resource)), total: r.total };
     },
     getOne: async ({ resource, id }) => ({ data: inOf(resource)(await api(`admin/${resource}/get`, { id })) }),
     create: async ({ resource, variables }) => ({ data: (await api(`admin/${resource}/save`, outOf(resource)(variables))) as any }),
