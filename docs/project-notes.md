@@ -97,6 +97,26 @@
 3. 先写一个纯 Node 的模拟引擎(实现 7 个接口的假数据),验证客户端流程并作为接口规范。
 4. 引擎路线 1 → 抖音弹幕适配器 → 路线 2。
 
+### 5.1 LiveTalking 核实结果(2026-10-29,克隆 c726943)
+
+- **授权**:Apache-2.0,可商用、可改。但 README「声明」要求:基于它发布到 B站/视频号/抖音等平台的视频需带 LiveTalking 水印和标识。直播是否适用需向作者确认,按需要带水印来规划。
+- **能力**:wav2lip / musetalk / ultralight 口型;TTS 插件(edge、sovits、cosyvoice、腾讯、豆包等);输出 webrtc / rtmp / 虚拟摄像头;待机时播放自定义视频(动作编排);可打断。
+- **接口**(`docs/api.md`,统一 `{code,msg,data}`):`/human`(文本,echo 或 chat,可 interrupt)、`/humanaudio`(上传音频驱动)、`/interrupt_talk`、`/is_speaking`、`/set_audiotype`、`/record`、`/sse`(播报状态推送)。另有 `/avatar.html` 与 avatar_api:上传视频生成形象。
+- **RTMP / 虚拟摄像头模式**:启动参数 `--transport rtmp --push_url ...`,固定会话 `sessionid=0`,启动即开始渲染。
+- **硬件**:wav2lip256 推荐 RTX 3060 以上(60fps);musetalk 推荐 RTX 3080Ti 以上(42fps);推理帧率需 ≥25 才算实时。Python 3.12 + CUDA 12.8,Windows 有作者的整合包。
+
+### 5.2 推荐架构(待确认)
+
+- **场景逻辑放在我们自己的 TypeScript 里**:在主进程实现内置「直播引擎」驱动(与 CloudServer 同类,`functions` 含 `live`),实现客户端已用的 7 个 `apiRequest`。它负责循环话术、关键词回复、进场/点赞/评论事件、手动播报、大模型兜底、优先级队列与打断,并用现有 `/api/live/tts` 的合成逻辑生成音频。
+- **LiveTalking 只当渲染器**:引擎把合成好的音频经 `/humanaudio` 发给 sessionid=0,用 `/is_speaking`、`/sse` 控制节奏。以后换别的渲染器只改这一层。
+- **无显卡模式**:循环视频 + 语音,FFmpeg 输出,作为第一阶段。
+- **出画方式**:抖音推流码(RTMP)不是所有账号都有,通用做法是虚拟摄像头或窗口采集,再接「抖音直播伴侣」或 OBS。
+- **弹幕**:官方监听脚本由其后端下发(`server/live_monitor_script`),我们没有,需要自己写。在直播间网页里监听评论区的页面变化,比解析私有协议简单,但页面改版会失效。
+
+### 5.3 风险
+- 抖音等平台对「无人直播 / AI 数字人直播」有规则(需声明 AI 生成、限制录播式循环),违规可能限流或封号,上线前要核对平台规范。
+- 官方「直播一键运行包」是闭源引擎,很可能要向 aigcpanel.com 校验授权,在本项目里大概率用不了,所以引擎要自己做。
+
 ## 6. 分期计划
 
 | 阶段 | 周期 | 内容 |
