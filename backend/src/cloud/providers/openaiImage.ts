@@ -2,8 +2,10 @@ import { normalizeBaseUrl } from "./baseUrl.js";
 import type { FileStore } from "../files.js";
 import type { CloudProvider, ModelRow, QueryResult, SubmitResult } from "../types.js";
 
-// OpenAI 兼容的文生图：provider_config = { baseUrl, apiKey, model, size? }
+// OpenAI 兼容的文生图：provider_config = { baseUrl, apiKey, model, size?, dialect?, extraBody? }
 // 同步返回；上游给 url 就直接用，给 base64 就落盘后返回本服务的下载地址。
+// dialect = "siliconflow"（地址含 siliconflow 时自动识别）：尺寸字段为 image_size、张数为 batch_size，
+// 结果在 images[] 里；extraBody 原样合并进请求体（如 num_inference_steps）。
 export class OpenAiImageProvider implements CloudProvider {
     readonly name = "openai-image";
 
@@ -13,7 +15,7 @@ export class OpenAiImageProvider implements CloudProvider {
     ) {}
 
     async submit(model: ModelRow, param: any): Promise<SubmitResult> {
-        const { baseUrl, apiKey, model: upstreamModel, size } = model.providerConfig;
+        const { baseUrl, apiKey, model: upstreamModel, size, dialect, extraBody } = model.providerConfig;
         if (!baseUrl || !apiKey || !upstreamModel) {
             throw new Error("供应商配置不完整");
         }
@@ -23,20 +25,23 @@ export class OpenAiImageProvider implements CloudProvider {
         }
         const w = Number(param?.param?.width);
         const h = Number(param?.param?.height);
+        const finalSize = w > 0 && h > 0 ? `${w}x${h}` : (param?.param?.size ?? size ?? "1024x1024");
+        const siliconflow = dialect ? dialect === "siliconflow" : /siliconflow/i.test(String(baseUrl));
         const res = await this.fetchImpl(`${normalizeBaseUrl(baseUrl)}/images/generations`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
             body: JSON.stringify({
                 model: upstreamModel,
                 prompt,
-                n: 1,
-                size: w > 0 && h > 0 ? `${w}x${h}` : (param?.param?.size ?? size ?? "1024x1024"),
+                ...(siliconflow ? { image_size: finalSize, batch_size: 1 } : { n: 1, size: finalSize }),
+                ...(extraBody && typeof extraBody === "object" ? extraBody : {}),
             }),
         });
         if (!res.ok) {
-            throw new Error(`上游返回 ${res.status}`);
+            throw new Error(`上游返回 ${res.status}：${(await res.text().catch(() => "")).slice(0, 200)}`);
         }
-        const item = ((await res.json()) as any)?.data?.[0];
+        const json: any = await res.json();
+        const item = json?.data?.[0] ?? json?.images?.[0];
         let url: string | undefined = item?.url;
         if (!url && item?.b64_json) {
             if (!this.files) {

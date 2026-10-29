@@ -26,7 +26,7 @@ export class OpenAiChatProvider implements CloudProvider {
             }),
         });
         if (!res.ok) {
-            throw new Error(`上游返回 ${res.status}`);
+            throw new Error(`上游返回 ${res.status}：${(await res.text().catch(() => "")).slice(0, 200)}`);
         }
         const json: any = await res.json();
         return {

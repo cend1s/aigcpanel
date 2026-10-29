@@ -65,7 +65,7 @@ export class OpenAiAsrProvider implements CloudProvider {
             body: form,
         });
         if (!res.ok) {
-            throw new Error(`上游返回 ${res.status}`);
+            throw new Error(`上游返回 ${res.status}：${(await res.text().catch(() => "")).slice(0, 200)}`);
         }
         const json: any = await res.json();
         const segments: any[] = Array.isArray(json?.segments) ? json.segments : [];
@@ -139,7 +139,7 @@ export class OpenAiTtsProvider implements CloudProvider {
             }),
         });
         if (!res.ok) {
-            throw new Error(`上游返回 ${res.status}`);
+            throw new Error(`上游返回 ${res.status}：${(await res.text().catch(() => "")).slice(0, 200)}`);
         }
         const buf = Buffer.from(await res.arrayBuffer());
         if (!buf.length) {

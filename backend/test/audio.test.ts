@@ -152,3 +152,22 @@ test("文本供应商：extraBody 原样合并进请求体", async () => {
     assert.equal(JSON.parse(seen.raw.toString()).enable_thinking, false);
     up.close();
 });
+
+test("图片供应商：硅基流动格式（image_size / images[]），上游报错带回原文", async () => {
+    const { OpenAiImageProvider } = await import("../src/cloud/providers/openaiImage.js");
+    let seen!: Seen;
+    let status = 200;
+    const up = await withUpstream((s, res) => {
+        seen = s;
+        res.statusCode = status;
+        res.setHeader("content-type", "application/json");
+        res.end(status === 200 ? JSON.stringify({ images: [{ url: "https://sf.example/a.png" }], seed: 1 }) : '{"message":"Invalid image_size"}');
+    });
+    const model: any = { providerConfig: { baseUrl: up.url, apiKey: "K", model: "Kwai-Kolors/Kolors", dialect: "siliconflow", extraBody: { num_inference_steps: 20 } } };
+    const r: any = await new OpenAiImageProvider().submit(model, { prompt: "猫", param: { width: 768, height: 1024 } });
+    assert.equal(r.result.url, "https://sf.example/a.png");
+    assert.deepEqual(JSON.parse(seen.raw.toString()), { model: "Kwai-Kolors/Kolors", prompt: "猫", image_size: "768x1024", batch_size: 1, num_inference_steps: 20 });
+    status = 400;
+    await assert.rejects(new OpenAiImageProvider().submit(model, { prompt: "猫" }), /上游返回 400：.*Invalid image_size/);
+    up.close();
+});
