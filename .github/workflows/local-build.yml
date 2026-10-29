@@ -1,0 +1,106 @@
+name: Local Trial Build
+
+# 直接用本仓库代码出“本地试用包”：桌面端安装包 + 服务端（后端 + 管理后台 + 便携 Node）。
+# 不签名、不公证、不依赖私有仓库与密钥。产物在 Actions 运行页面的 Artifacts 里下载。
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/nifty-rubin-ix03iu
+
+concurrency:
+  group: local-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  desktop:
+    name: desktop-${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    continue-on-error: ${{ matrix.optional }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: win-x64
+            os: windows-latest
+            arch: x64
+            optional: false
+          - name: mac-arm64
+            os: macos-latest
+            arch: arm64
+            optional: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          npm install --ignore-scripts --no-audit --no-fund
+          if (Test-Path node_modules\canvas) { Remove-Item -Recurse -Force node_modules\canvas }
+          # bufferutil 是 ws 的可选原生加速，Windows 上编译经常失败，删掉后自动回退到 JS 实现
+          if (Test-Path "node_modules\bufferutil\binding.gyp") { Remove-Item "node_modules\bufferutil\binding.gyp" -Force }
+          if (Test-Path "node_modules\bufferutil\build") { Remove-Item -Recurse -Force "node_modules\bufferutil\build" }
+          npx electron-builder install-app-deps
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install python-setuptools || true
+          npm install --no-audit --no-fund
+
+      - name: Fetch ffmpeg / ffprobe
+        shell: bash
+        run: bash ./scripts/init.sh
+
+      - name: Build desktop app
+        shell: bash
+        env:
+          TARGET_ARCH: ${{ matrix.arch }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: npm run build
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: AigcPanel-desktop-${{ matrix.name }}
+          path: |
+            dist-release/*.exe
+            dist-release/*.dmg
+          if-no-files-found: error
+          retention-days: 14
+
+  server:
+    name: server-${{ matrix.platform }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [win-x64, darwin-arm64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Backend tests
+        working-directory: backend
+        run: |
+          npm ci
+          npm test
+
+      - name: Pack server bundle
+        run: node backend/packaging/pack.mjs --platform ${{ matrix.platform }} --out dist-server
+
+      - name: Upload server bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: aigcpanel-server-${{ matrix.platform }}
+          path: dist-server/aigcpanel-server-${{ matrix.platform }}.zip
+          if-no-files-found: error
+          retention-days: 14

@@ -3,7 +3,7 @@ import { ipcMain } from "electron";
 import { Log } from "../log/main";
 import { mapError } from "./error";
 import { AigcServer } from "../../aigcserver";
-import { voiceApiTest, maskVoiceApiConfig } from "../../aigcserver/VoiceApi";
+import { voiceApiTest, maskVoiceApiConfig } from "../../aigcserver/voiceapi";
 import { SendType, ServerContext, ServerInfo } from "./type";
 import { Files } from "../file/main";
 import { getGpuInfo } from "../../lib/env-main";

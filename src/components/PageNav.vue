@@ -49,7 +49,7 @@ const doUser = async () => {
             >
                 <div class="relative w-10 h-10">
                     <img
-                        v-if="!user.isInit || !user.user.id"
+                        v-if="!user.isInit || !user.user.id || !user.user.avatar"
                         class="rounded-full border border-solid border-gray-200 w-10 h-10 shadow-lg"
                         src="./../assets/image/avatar.svg"
                     />
@@ -64,7 +64,7 @@ const doUser = async () => {
             <div v-else>
                 <div class="relative w-10 h-10">
                     <img
-                        v-if="!user.isInit || !user.user.id"
+                        v-if="!user.isInit || !user.user.id || !user.user.avatar"
                         class="rounded-full border border-solid border-gray-200 w-10 h-10 shadow-lg"
                         src="./../assets/image/avatar.svg"
                     />

@@ -9,7 +9,7 @@ import {
     getVoiceApiProvider,
     maskVoiceApiConfig,
     VoiceApiConfig,
-} from "./VoiceApi";
+} from "./voiceapi";
 
 /**
  * 云厂商 API 语音模型（type=api）的 ServerContext。

@@ -3,3 +3,10 @@ dist-*/
 .DS_Store
 node_modules/
 _temp/
+
+# scripts/init.sh 下载的 ffmpeg / ffprobe 二进制与缓存
+share-binary/
+share-binary-init.log
+electron/resources/extra/linux-*/
+electron/resources/extra/osx-*/
+electron/resources/extra/win-*/

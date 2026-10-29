@@ -310,3 +310,6 @@ export const voiceApiTest = async (
     }
     return await provider.soundTts(config, { text, param: {} });
 };
+
+// ApiServer、server/main 需要的日志脱敏函数，实现在 VoideDriver/util
+export { maskVoiceApiConfig } from "./VoideDriver/util";
