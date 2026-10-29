@@ -57,12 +57,18 @@ jobs:
         shell: bash
         run: bash ./scripts/init.sh
 
+      # 不用 npm run build：其中的 electron-builder 在 CI 环境会自动尝试发布到 GitHub Releases（需要 GH_TOKEN）。
+      # 这里按 scripts/build.mjs 的同样步骤执行，并显式 --publish never。
       - name: Build desktop app
         shell: bash
         env:
           TARGET_ARCH: ${{ matrix.arch }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-        run: npm run build
+        run: |
+          npx cross-env VITE_RELEASE=1 npx vite build
+          node scripts/gen-electron-builder-config.mjs
+          if [ "$RUNNER_OS" = "Windows" ]; then PLATFORM=--win; else PLATFORM=--mac; fi
+          npx electron-builder --config _temp/electron-builder-native-config.json $PLATFORM --publish never
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
