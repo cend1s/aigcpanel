@@ -13,6 +13,7 @@ import { cloudRoutes } from "./routes/cloud.js";
 import { fileRoutes } from "./routes/files.js";
 import { payRoutes } from "./routes/pay.js";
 import { webRoutes } from "./routes/web.js";
+import { SERVER_VERSION } from "./version.js";
 
 export const buildApp = (ctx: AppContext) => {
     const app = Fastify({
@@ -42,6 +43,7 @@ export const buildApp = (ctx: AppContext) => {
     app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_req, body, done) => {
         done(null, Object.fromEntries(new URLSearchParams(String(body))));
     });
+    app.get("/api/version", async () => ({ code: 0, msg: "ok", data: { version: SERVER_VERSION } }));
     app.register(async (instance) => {
         authRoutes(instance, ctx);
         appManagerRoutes(instance, ctx.db);

@@ -65,6 +65,7 @@ jobs:
           TARGET_ARCH: ${{ matrix.arch }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
         run: |
+          export BUILD_VERSION="r${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
           npx cross-env VITE_RELEASE=1 npx vite build
           node scripts/gen-electron-builder-config.mjs
           if [ "$RUNNER_OS" = "Windows" ]; then PLATFORM=--win; else PLATFORM=--mac; fi
@@ -73,7 +74,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: AigcPanel-desktop-${{ matrix.name }}
+          name: AigcPanel-desktop-${{ matrix.name }}-r${{ github.run_number }}
           path: |
             dist-release/*.exe
             dist-release/*.dmg
@@ -101,12 +102,15 @@ jobs:
           npm test
 
       - name: Pack server bundle
-        run: node backend/packaging/pack.mjs --platform ${{ matrix.platform }} --out dist-server
+        shell: bash
+        run: |
+          export BUILD_VERSION="r${GITHUB_RUN_NUMBER}-${GITHUB_SHA:0:7}"
+          node backend/packaging/pack.mjs --platform ${{ matrix.platform }} --out dist-server
 
       - name: Upload server bundle
         uses: actions/upload-artifact@v4
         with:
-          name: aigcpanel-server-${{ matrix.platform }}
+          name: aigcpanel-server-${{ matrix.platform }}-r${{ github.run_number }}
           path: dist-server/aigcpanel-server-${{ matrix.platform }}.zip
           if-no-files-found: error
           retention-days: 14

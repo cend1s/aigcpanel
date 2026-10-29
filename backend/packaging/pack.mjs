@@ -40,9 +40,11 @@ cpSync(join(rootDir, "admin", "dist"), join(stage, "admin", "dist"), { recursive
 
 // 2. 后端：应用代码打成单文件，第三方依赖保留在 node_modules（svg-captcha 运行时要读字体文件）
 run("npm ci", backendDir);
+const serverVersion = process.env.BUILD_VERSION || `dev-${new Date().toISOString().slice(5, 16).replace(/[-T:]/g, "")}`;
 const esbuild = "npx esbuild --bundle --platform=node --format=esm --target=node22 --packages=external";
 run(`${esbuild} src/index.ts --outfile=${join(stage, "server", "server.mjs")}`, backendDir);
 run(`${esbuild} scripts/create-admin.ts --outfile=${join(stage, "server", "create-admin.mjs")}`, backendDir);
+writeFileSync(join(stage, "server", "VERSION"), serverVersion);
 const pkg = JSON.parse(readFileSync(join(backendDir, "package.json"), "utf8"));
 writeFileSync(
     join(stage, "server", "package.json"),
@@ -111,4 +113,4 @@ cpSync(join(here, "README.txt"), join(stage, "使用说明.txt"));
 const zip = `aigcpanel-server-${platform}.zip`;
 rmSync(join(outDir, zip), { force: true });
 run(`zip -qry ${zip} aigcpanel-server-${platform}`, outDir);
-console.log(`\n完成：${join(outDir, zip)}（Node ${version}）`);
+console.log(`\n完成：${join(outDir, zip)}（服务端版本 ${serverVersion}，Node ${version}）`);

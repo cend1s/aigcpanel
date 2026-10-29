@@ -42,6 +42,8 @@ export default defineConfig(({command}) => {
     const _platform = _platformMap[process.platform] ?? process.platform;
     const _arch = _archMap[process.arch] ?? process.arch;
     const buildId = `${_platform}-${_arch}-${dayjs().tz("Asia/Shanghai").format("YYYYMMDDHHmmss")}`;
+    // 电商版自己的版本号：CI 里为 r<运行序号>-<提交>，本地构建为 dev-<时间>
+    const ecomVersion = process.env.BUILD_VERSION || `dev-${dayjs().tz("Asia/Shanghai").format("MMDDHHmm")}`;
 
     const externalPackages = [
         ...Object.keys("dependencies" in pkg ? pkg.dependencies : {}),
@@ -149,6 +151,7 @@ export default defineConfig(({command}) => {
                     vite: {
                         define: {
                             __BUILD_ID__: JSON.stringify(buildId),
+                            __ECOM_VERSION__: JSON.stringify(ecomVersion),
                         },
                         build: {
                             sourcemap,
@@ -199,6 +202,7 @@ export default defineConfig(({command}) => {
         ],
         define: {
             __BUILD_ID__: JSON.stringify(buildId),
+            __ECOM_VERSION__: JSON.stringify(ecomVersion),
         },
         build: {
             sourcemap: sourcemap,

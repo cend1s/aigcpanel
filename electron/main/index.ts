@@ -68,8 +68,10 @@ Diagnostics.register();
 
 // Ensure consistent app name (macOS uses Info.plist CFBundleName from the dev binary,
 // which would be "Electron" instead of "aigcpanel" without this explicit override)
-if (app.getName() !== "aigcpanel") {
-    app.setName("aigcpanel");
+// 电商版使用独立名称：数据目录与单实例锁都和官方 AigcPanel 分开，两者可同时安装运行，
+// 否则官方版在托盘运行时，打开本应用会直接退出并唤起官方版窗口。
+if (app.getName() !== "aigcpanel-ecom") {
+    app.setName("aigcpanel-ecom");
 }
 
 // 数据目录覆盖：AIGCPANEL_DATA_ROOT 环境变量（有值时）重定向整个 userData 目录，

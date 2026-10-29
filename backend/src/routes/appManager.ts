@@ -23,6 +23,15 @@ export const safeRedirect = (url: unknown): string => {
 };
 
 export const appManagerRoutes = (app: FastifyInstance, db: Db) => {
+    // 桌面端启动时检查更新（地址不带 /api 前缀）。没有这个接口时客户端会把 404 弹成「Not Found」。
+    // 暂不做在线更新：原样返回客户端当前版本，表示已是最新。
+    app.post("/app_manager/updater/open", async (req) => {
+        const b = (req.body ?? {}) as { version?: string };
+        return ok({ version: String(b.version ?? "") });
+    });
+    // 桌面端的使用统计上报：目前只接收不存储
+    app.post("/app_manager/collect", async () => ok({}));
+
     // 注意：本接口永远不能返回 1001。
     // 客户端收到 1001 会调用 refresh()，而 refresh() 又请求本接口，会无限递归。
     // 未登录或 token 失效时返回 code 0 + 空用户，客户端据此清除登录态。

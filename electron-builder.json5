@@ -1,11 +1,11 @@
 // @see https://www.electron.build/configuration/configuration
 {
     "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-    "appId": "AigcPanel",
+    "appId": "AigcPanelEcom",
     "publish": [],
     "asar": true,
     "npmRebuild": true,
-    "productName": "AigcPanel",
+    "productName": "AigcPanelEcom",
     "directories": {
         "output": "dist-release",
         "buildResources": "electron/resources/build"
@@ -39,8 +39,8 @@
     },
     "nsis": {
         "artifactName": "${productName}-${version}-win-setup-${arch}.${ext}",
-        "shortcutName": "${productName}",
-        "uninstallDisplayName": "${productName}",
+        "shortcutName": "AigcPanel电商版",
+        "uninstallDisplayName": "AigcPanel电商版",
         "oneClick": false,
         "perMachine": false,
         "allowToChangeInstallationDirectory": true,

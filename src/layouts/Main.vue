@@ -42,7 +42,8 @@ const doQuit = async () => {
     await appQuitConfirm.value?.show();
 };
 
-let appEditionBadge = t("common.communityEdition");
+// 标题栏显示电商版自己的版本号，便于确认当前运行的是哪一次构建
+let appEditionBadge = `${t("common.ecomEdition")} ${__ECOM_VERSION__}`;
 
 
 onMounted(() => {

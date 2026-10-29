@@ -15,6 +15,7 @@ import routerProvider, { CatchAllNavigate, DocumentTitleHandler, NavigateToResou
 import { App as AntdApp, ConfigProvider } from "antd";
 import zhCN from "antd/locale/zh_CN";
 import "dayjs/locale/zh-cn";
+import { useEffect, useState } from "react";
 import { BrowserRouter, Outlet, Route, Routes } from "react-router";
 import { DashboardPage } from "./pages/dashboard";
 import { LoginPage } from "./pages/login";
@@ -38,7 +39,21 @@ const resources = [
     { name: "audit", list: "/audit", meta: { label: "审计日志", icon: <AuditOutlined /> } },
 ];
 
-const Title = (props: { collapsed: boolean }) => <ThemedTitle {...props} text="管理后台" />;
+// 标题旁显示服务端版本，便于确认部署的是哪一次构建
+const useServerVersion = () => {
+    const [version, setVersion] = useState("");
+    useEffect(() => {
+        fetch("/api/version")
+            .then((r) => r.json())
+            .then((r) => setVersion(r?.data?.version ?? ""))
+            .catch(() => undefined);
+    }, []);
+    return version;
+};
+const Title = (props: { collapsed: boolean }) => {
+    const version = useServerVersion();
+    return <ThemedTitle {...props} text={version ? `管理后台 ${version}` : "管理后台"} />;
+};
 
 export default function App() {
     return (

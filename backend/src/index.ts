@@ -7,6 +7,7 @@ import { OpenAiAsrProvider, OpenAiTtsProvider } from "./cloud/providers/openaiAu
 import { OpenAiChatProvider } from "./cloud/providers/openaiChat.js";
 import { ProviderRegistry } from "./cloud/types.js";
 import { config } from "./config.js";
+import { SERVER_VERSION } from "./version.js";
 import { openDb } from "./db.js";
 import { EpayProvider } from "./pay/providers/epay.js";
 import { MockPayProvider } from "./pay/providers/mock.js";
@@ -62,7 +63,9 @@ setInterval(() => {
     sweepTasks(db, providers).catch((e) => app.log.error(e, "sweep failed"));
 }, 60_000).unref();
 
-app.listen({ port: config.port, host: config.host }).catch((e) => {
-    app.log.error(e);
-    process.exit(1);
-});
+app.listen({ port: config.port, host: config.host })
+    .then(() => console.log(`服务端版本：${SERVER_VERSION}`))
+    .catch((e) => {
+        app.log.error(e);
+        process.exit(1);
+    });

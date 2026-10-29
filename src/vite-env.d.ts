@@ -2,6 +2,7 @@
 import type { Router } from "vue-router";
 
 declare const __BUILD_ID__: string;
+declare const __ECOM_VERSION__: string;
 
 declare global {
     interface Window {
