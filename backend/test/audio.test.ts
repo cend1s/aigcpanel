@@ -171,3 +171,15 @@ test("图片供应商：硅基流动格式（image_size / images[]），上游�
     await assert.rejects(new OpenAiImageProvider().submit(model, { prompt: "猫" }), /上游返回 400：.*Invalid image_size/);
     up.close();
 });
+
+test("语音识别：上游只给整段文字且没有时长时，用客户端上报的时长", async () => {
+    const up = await withUpstream((_s, res) => {
+        res.setHeader("content-type", "application/json");
+        res.end(JSON.stringify({ text: "整段文字" }));
+    });
+    const model: any = { providerConfig: { baseUrl: up.url, apiKey: "K", model: "FunAudioLLM/SenseVoiceSmall", responseFormat: "json" }, pricing: { type: "per_unit", unit: "second", amount: 1 } };
+    const r: any = await new OpenAiAsrProvider().submit(model, { audio: wavDataUrl, duration: 12.5 });
+    assert.deepEqual(r.result.records, [{ start: 0, end: 12500, text: "整段文字" }]);
+    assert.equal(r.usage.units, 13);
+    up.close();
+});

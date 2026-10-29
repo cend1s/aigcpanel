@@ -69,7 +69,8 @@ export class OpenAiAsrProvider implements CloudProvider {
         }
         const json: any = await res.json();
         const segments: any[] = Array.isArray(json?.segments) ? json.segments : [];
-        let duration = Number(json?.duration) || 0;
+        // 上游不返回时长（如 SenseVoice）时用客户端上报的音频时长，保证整段记录有结束时间、计费准确
+        let duration = Number(json?.duration) || Number(param?.duration) || 0;
         let records = segments
             .map((s) => ({
                 start: Math.round(Number(s.start) * 1000),
@@ -87,8 +88,7 @@ export class OpenAiAsrProvider implements CloudProvider {
         if (!duration) {
             duration = records[records.length - 1].end / 1000;
         }
-        // 上游没给时长时按客户端声明的时长计费，都没有则按 1 个单位
-        const seconds = duration || Number(param?.duration) || 0;
+        const seconds = duration;
         return {
             kind: "done",
             result: { records },

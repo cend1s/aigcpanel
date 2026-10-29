@@ -14,8 +14,8 @@ export type CloudRunDeps = {
     download: (url: string) => Promise<string>;
     /** 读取本地图片并转成 data URL */
     readImageAsDataUrl: (path: string) => Promise<string>;
-    /** 读取本地音频并转成 data URL（语音识别） */
-    readAudioAsDataUrl?: (path: string) => Promise<string>;
+    /** 读取本地音频并转成 data URL（语音识别），可附带时长（秒） */
+    readAudioAsDataUrl?: (path: string) => Promise<string | { dataUrl: string; duration?: number }>;
     sleep: (ms: number) => Promise<void>;
     now: () => number;
     isCancelled: () => boolean;
@@ -65,7 +65,15 @@ export const runCloudFunction = async (
         if (isRemoteRef(data.audio)) {
             param.audio = data.audio;
         } else if (deps.readAudioAsDataUrl) {
-            param.audio = await deps.readAudioAsDataUrl(data.audio);
+            const audio = await deps.readAudioAsDataUrl(data.audio);
+            if (typeof audio === "string") {
+                param.audio = audio;
+            } else {
+                param.audio = audio.dataUrl;
+                if (audio.duration && audio.duration > 0) {
+                    param.duration = audio.duration;
+                }
+            }
         } else {
             throw new CloudRunError("当前环境不支持上传音频");
         }

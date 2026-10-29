@@ -94,3 +94,12 @@ test("语音识别：本地音频转 data URL 上传，返回识别记录而不�
         (e: any) => e.type === "EmptyResult",
     );
 });
+
+test("语音识别：读音频时附带的时长随任务提交", async () => {
+    const { deps, calls } = make([ok({ id: "c", status: "succeeded", result: { records: [] } })], {
+        readAudioAsDataUrl: async () => ({ dataUrl: "data:audio/mpeg;base64,AA", duration: 12.5 }),
+    });
+    await runCloudFunction(deps, target, "asr", { id: "t", audio: "/a.wav" });
+    assert.equal(calls[0].data.param.audio, "data:audio/mpeg;base64,AA");
+    assert.equal(calls[0].data.param.duration, 12.5);
+});

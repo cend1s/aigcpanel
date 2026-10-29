@@ -48,6 +48,9 @@ openai-tts（语音合成，调 /audio/speech）或 openai-asr（语音识别，
   供应商配置可加 "language"（如 zh）；上游不支持分段时间轴时加 "responseFormat": "json"
   计价：按分钟 {"type": "per_unit", "unit": "minute", "amount": 10}（按上游返回的实际时长结算）
   桌面端会先把音频/视频转成 16kHz 单声道 mp3 再上传，单次最长约 40 分钟
+  例：硅基流动 SenseVoice（不返回分段时间轴，整段文字作为一条记录）：
+      供应商 openai-asr，配置 {"baseUrl": "https://api.siliconflow.cn/v1", "apiKey": "sk-...",
+      "model": "FunAudioLLM/SenseVoiceSmall", "responseFormat": "json"}
 
 五、端口被占用
 修改启动脚本里的 PORT，同时桌面端需要连接同一个地址（当前版本固定为 3100，建议先保持 3100）。

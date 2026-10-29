@@ -114,7 +114,11 @@ export const CloudServer = function (this: any) {
                     throw new Error("音频过长，云端语音识别单次最长约 40 分钟，请先分段");
                 }
                 const buf = await fs.promises.readFile(mp3);
-                return `data:audio/mpeg;base64,${buf.toString("base64")}`;
+                return {
+                    dataUrl: `data:audio/mpeg;base64,${buf.toString("base64")}`,
+                    // 32kbps 恒定码率：每秒约 4000 字节
+                    duration: Math.round((buf.length / 4000) * 10) / 10,
+                };
             } finally {
                 fs.promises.rm(mp3, { force: true }).catch(() => {});
             }

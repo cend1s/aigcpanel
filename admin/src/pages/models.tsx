@@ -82,7 +82,7 @@ const ModelForm = ({ formProps, editing }: { formProps: any; editing: boolean })
                 name="functionsJson"
                 label="功能定义（JSON，下发客户端，决定在哪些页面可选及参数表单）"
                 rules={[jsonRule]}
-                extra="可用功能：textGen（电商文案）、textToImage、imageToImage、textToVideo、imageToVideo"
+                extra="可用功能：textGen（电商文案）、textToImage、imageToImage、textToVideo、imageToVideo、soundTts（语音合成）、asr（语音识别）"
             >
                 <Input.TextArea rows={6} style={{ fontFamily: "monospace" }} />
             </Form.Item>
