@@ -15,6 +15,8 @@ import {
     liveStart,
     liveStop,
     liveViewerEvent,
+    monitorClose,
+    monitorOpen,
     openStage,
 } from "./runtime";
 import { EventTypes } from "./util";
@@ -98,6 +100,17 @@ const doSay = () => {
         Dialog.tipError(t("live.kb.containsBlackWords", { words: (r as any).words.join("、") }));
     }
 };
+
+const roomUrl = ref(s.liveRoomUrl);
+const doMonitorOpen = async () => {
+    try {
+        await monitorOpen(roomUrl.value);
+        roomUrl.value = s.liveRoomUrl;
+    } catch (e: any) {
+        Dialog.tipError(String(e?.message ?? e));
+    }
+};
+const eventLabelKey = (v?: string) => EventTypes.find((e) => e.value === v)?.labelKey ?? "";
 
 const doSimulate = async () => {
     await liveViewerEvent({ ...sim.value, source: "simulate" });
@@ -243,6 +256,25 @@ const goTab = (tab: string) => Router.push({ path: "/live", query: { tab } });
                         <a-textarea v-model="sayText" :auto-size="{ minRows: 1, maxRows: 3 }" :placeholder="$t('live.manualSayPlaceholder')" @keydown.enter.exact.prevent="doSay" />
                         <a-button type="primary" :disabled="!running || !sayText.trim()" @click="doSay">{{ $t("live.send") }}</a-button>
                     </div>
+                </div>
+
+                <div class="rounded-xl border p-4 bg-white">
+                    <div class="font-bold mb-1">{{ $t("live.monitor") }}</div>
+                    <div class="text-gray-400 text-xs mb-2">{{ $t("live.monitorDesc") }}</div>
+                    <div class="flex gap-2">
+                        <a-input v-model="roomUrl" :placeholder="$t('live.roomUrlPlaceholder')" allow-clear />
+                        <a-button type="primary" @click="doMonitorOpen">{{ liveRuntime.monitorOpened ? $t("live.monitorReopen") : $t("live.monitorOpen") }}</a-button>
+                        <a-button v-if="liveRuntime.monitorOpened" @click="monitorClose">{{ $t("common.close") }}</a-button>
+                    </div>
+                    <div v-if="liveRuntime.monitorOpened" class="text-sm mt-2 text-gray-500">
+                        {{ $t("live.monitorCount", { count: liveRuntime.monitorCount }) }}
+                        <template v-if="liveRuntime.monitorLast">
+                            · {{ $t(eventLabelKey(liveRuntime.monitorLast.type)) }}
+                            <b>{{ liveRuntime.monitorLast.username }}</b>
+                            {{ liveRuntime.monitorLast.content }}
+                        </template>
+                    </div>
+                    <div v-if="liveRuntime.monitorOpened && !running" class="text-xs mt-1 text-orange-500">{{ $t("live.monitorNotLive") }}</div>
                 </div>
 
                 <div class="rounded-xl border p-4 bg-white">

@@ -116,5 +116,12 @@
     "live.howTo1": "点「开始直播」，会打开一个「AigcPanel 直播画面」窗口，不要最小化它（可以被别的窗口挡住）",
     "live.howTo2": "打开抖音直播伴侣，添加素材 → 窗口，选择「AigcPanel 直播画面」，拉满画布",
     "live.howTo3": "在直播伴侣里打开「系统声音」（或电脑声音）采集，关闭麦克风，避免录进环境音",
-    "live.howTo4": "在直播伴侣里开播；观众互动会显示在「直播互动」，回复会自动插到循环口播前面"
+    "live.howTo4": "在直播伴侣里开播；观众互动会显示在「直播互动」，回复会自动插到循环口播前面",
+    "live.monitor": "抖音弹幕监听",
+    "live.monitorDesc": "打开直播间网页，自动读取观众进入、点赞、评论、关注、送礼。首次可能需要在弹出的窗口里登录抖音",
+    "live.roomUrlPlaceholder": "直播间地址或分享链接，例如 https://live.douyin.com/123456789",
+    "live.monitorOpen": "打开监听",
+    "live.monitorReopen": "重新打开",
+    "live.monitorCount": "已收到 {count} 条互动",
+    "live.monitorNotLive": "还没开播：互动会记录下来，但不会自动回复"
 }

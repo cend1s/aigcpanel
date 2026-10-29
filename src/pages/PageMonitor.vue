@@ -17,6 +17,7 @@ const pageTitle = ref("");
 const pageDebugToolsShow = ref(false);
 const pageOpenDevTools = ref(false);
 const pageScript = ref("");
+const pageScriptContent = ref("");
 const pageStatusType = ref<"info" | "success" | "error">("info");
 const pageStatusMsg = ref("");
 const pageStatusColor = computed(() => {
@@ -39,6 +40,7 @@ window.__page.registerCallPage("MonitorData", (resolve, reject, payload) => {
         status.value?.setStatus("loading");
         pageOpenDevTools.value = data.openDevTools;
         pageScript.value = data.script;
+        pageScriptContent.value = data.scriptContent || "";
         webUrl.value = data.url;
         emit("event", "SetTitle", { title: pageTitle.value + " " + data.url });
     }
@@ -85,7 +87,9 @@ watch(web, (newVal) => {
         if (pageOpenDevTools.value) {
             web.value.openDevTools();
         }
-        if (pageScript.value) {
+        if (pageScriptContent.value) {
+            web.value.executeJavaScript(pageScriptContent.value);
+        } else if (pageScript.value) {
             window.$mapi.user
                 .apiPost(pageScript.value, {}, { throwException: false })
                 .then((res) => {
@@ -109,19 +113,22 @@ watch(web, (newVal) => {
             console.log("message", { type, data });
             if ("status" === type) {
                 pageStatusType.value = data.type;
-                pageStatusMsg.value = data.msg;
+                pageStatusMsg.value = String(data.msg ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
             } else if ("event" === type) {
                 pageStatusType.value = "info";
                 // {"type":"Enter","data":{"source":"douyin","username":"啊龟 ","content":"来了"}}
                 // Enter ( source: douyin, username: 啊龟 , content: 来了 )
+                // 昵称、评论来自直播间观众，必须转义后再拼进 HTML（本窗口有 Node 权限）
+                const esc = (v: any) =>
+                    String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
                 const format = (data: any) => {
                     const dataList: string[] = [];
                     for (const key in data.data) {
-                        dataList.push(`${key}:${data.data[key]}`);
+                        dataList.push(`${esc(key)}:${esc(data.data[key])}`);
                     }
-                    return `<span class="bg-gray-200 leading-6 px-2 rounded">${
-                        data.type
-                    }</span> <span class="text-gray-600">( ${dataList.join(", ")} )</span>`;
+                    return `<span class="bg-gray-200 leading-6 px-2 rounded">${esc(
+                        data.type,
+                    )}</span> <span class="text-gray-600">( ${dataList.join(", ")} )</span>`;
                 };
                 pageStatusMsg.value = format(data);
                 window.__page.ipcSend("MonitorEvent", data.type, data.data);
@@ -131,7 +138,8 @@ watch(web, (newVal) => {
 });
 
 onMounted(async () => {
-    webPreload.value = await window.$mapi.app.getPreload();
+    // 直播间是第三方网页：用只暴露上报接口的专用 preload，不用软件的完整 preload
+    webPreload.value = (await window.$mapi.app.getPreload()).replace(/index\.cjs$/, "monitor.cjs");
 });
 </script>
 
@@ -162,7 +170,6 @@ onMounted(async () => {
             <webview
                 ref="web"
                 :src="webUrl"
-                nodeintegration
                 webpreferences="contextIsolation=false,sandbox=false"
                 partition="persist:monitor"
                 :useragent="webUserAgent"

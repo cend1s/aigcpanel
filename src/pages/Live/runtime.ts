@@ -6,6 +6,7 @@ import { StorageService } from "../../service/StorageService";
 import { VideoTemplateService } from "../../service/VideoTemplateService";
 import { LiveVoiceService } from "../../service/VoiceService";
 import { loadBlackWords } from "./config/blackWord";
+import { buildDouyinMonitorScript, normalizeDouyinRoomUrl } from "./douyin";
 import { DEFAULT_ENGINE_CONFIG, KnowledgeRecord, LiveEngine, LiveViewerEvent, TalkItem } from "./engine";
 
 const STAGE = "live-stage";
@@ -29,6 +30,8 @@ export type LiveConsoleSettings = {
     flowTalkDelayMax: number;
     defaultUsername: string;
     enterIgnoreSecond: number;
+    /** 抖音直播间地址 */
+    liveRoomUrl: string;
 };
 
 const DEFAULT_SETTINGS: LiveConsoleSettings = {
@@ -43,6 +46,7 @@ const DEFAULT_SETTINGS: LiveConsoleSettings = {
     flowTalkDelayMax: DEFAULT_ENGINE_CONFIG.flowTalkDelayMax,
     defaultUsername: DEFAULT_ENGINE_CONFIG.defaultUsername,
     enterIgnoreSecond: DEFAULT_ENGINE_CONFIG.enterIgnoreSecond,
+    liveRoomUrl: "",
 };
 
 export const liveRuntime = reactive({
@@ -53,6 +57,10 @@ export const liveRuntime = reactive({
     queue: [] as TalkItem[],
     recent: [] as TalkItem[],
     warns: [] as { time: number; msg: string }[],
+    /** 弹幕监听：本次打开后收到的互动数与最近一条 */
+    monitorOpened: false,
+    monitorCount: 0,
+    monitorLast: null as null | { type: string; username: string; content: string; time: number },
 });
 
 export const saveLiveSettings = () => StorageUtil.set(SETTINGS_KEY, liveRuntime.settings);
@@ -207,4 +215,50 @@ export const liveViewerEvent = async (e: LiveViewerEvent & { source?: string }) 
         content: { source: e.source || "", username: e.username || "", content: e.content || "" },
     });
     engine.onEvent(e);
+};
+
+// ── 抖音弹幕监听 ─────────────────────────────────────────
+
+const MONITOR = "monitor";
+let monitorListening = false;
+
+const onMonitorEvent = (d: any) => {
+    const data = d?.data ?? {};
+    liveRuntime.monitorCount++;
+    liveRuntime.monitorLast = { type: d?.type, username: data.username || "", content: data.content || "", time: Date.now() };
+    liveViewerEvent({ type: d?.type, username: data.username, content: data.content, source: data.source || "douyin" }).catch(() => undefined);
+};
+
+/** 打开抖音直播间监听窗口；同一时间只有一个，换地址时重新打开 */
+export const monitorOpen = async (input: string) => {
+    const url = normalizeDouyinRoomUrl(input);
+    if (!url) throw new Error("请填写抖音直播间地址，例如 https://live.douyin.com/123456789");
+    liveRuntime.settings.liveRoomUrl = url;
+    saveLiveSettings();
+    if (!monitorListening) {
+        window.__page.onBroadcast("MonitorEvent", onMonitorEvent);
+        monitorListening = true;
+    }
+    if (liveRuntime.monitorOpened) {
+        await window.$mapi.app.windowClose(MONITOR).catch(() => undefined);
+        // 关闭是异步的，等旧窗口真正关掉，否则会直接把旧窗口重新显示出来
+        await new Promise((r) => setTimeout(r, 500));
+    }
+    await window.$mapi.app.windowOpen(MONITOR, {
+        title: "抖音直播间弹幕监听",
+        width: 1100,
+        height: 800,
+        url,
+        scriptContent: buildDouyinMonitorScript(),
+        openDevTools: false,
+        broadcastPages: ["main"],
+    });
+    liveRuntime.monitorOpened = true;
+    liveRuntime.monitorCount = 0;
+    liveRuntime.monitorLast = null;
+};
+
+export const monitorClose = async () => {
+    await window.$mapi.app.windowClose(MONITOR).catch(() => undefined);
+    liveRuntime.monitorOpened = false;
 };

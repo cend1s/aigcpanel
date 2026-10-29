@@ -198,6 +198,30 @@ export default defineConfig(({command}) => {
                         },
                     },
                 },
+                {
+                    // 弹幕监听 webview 专用的最小 preload
+                    entry: "electron/preload/monitor.ts",
+                    vite: {
+                        build: {
+                            target: "es2015",
+                            sourcemap: undefined, // #332
+                            minify: minify,
+                            outDir: "dist-electron/preload",
+                            lib: {
+                                formats: ["cjs"],
+                                fileName: "monitor",
+                            },
+                            rollupOptions: {
+                                external: externalPackages,
+                                output: {
+                                    format: "cjs",
+                                    // entryFileNames: '[name].cjs',
+                                    strict: true,
+                                },
+                            },
+                        },
+                    },
+                },
             ]),
             renderer(),
         ],

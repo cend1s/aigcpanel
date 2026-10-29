@@ -116,5 +116,12 @@
     "live.howTo1": "Click Start live; an \"AigcPanel 直播画面\" window opens. Do not minimize it",
     "live.howTo2": "In Douyin Live Companion add a Window source, pick \"AigcPanel 直播画面\" and fill the canvas",
     "live.howTo3": "Enable system audio capture and mute the microphone",
-    "live.howTo4": "Go live; viewer interactions appear under Interactions and replies jump ahead of loop scripts"
+    "live.howTo4": "Go live; viewer interactions appear under Interactions and replies jump ahead of loop scripts",
+    "live.monitor": "Douyin comment monitor",
+    "live.monitorDesc": "Opens the live room page and reads enters, likes, comments, follows and gifts. You may need to log in to Douyin in that window first",
+    "live.roomUrlPlaceholder": "Live room URL or share link, e.g. https://live.douyin.com/123456789",
+    "live.monitorOpen": "Open monitor",
+    "live.monitorReopen": "Reopen",
+    "live.monitorCount": "{count} interactions received",
+    "live.monitorNotLive": "Not live yet: interactions are recorded but not answered"
 }

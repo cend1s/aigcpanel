@@ -19,6 +19,8 @@ export const PageMonitor = {
                 height: 500,
                 url: "",
                 script: null,
+                // 直接注入的脚本内容（不经服务端下发）
+                scriptContent: "",
                 openDevTools: false,
                 broadcastPages: [],
             },
@@ -54,6 +56,7 @@ export const PageMonitor = {
             sendMonitorData("LoadUrl", {
                 url: option.url,
                 script: option.script,
+                scriptContent: option.scriptContent,
                 openDevTools: option.openDevTools,
             });
         });
