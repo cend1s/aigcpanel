@@ -1,97 +1,78 @@
 <script setup lang="ts">
 import { onMounted, ref, watch } from "vue";
+import VoiceManage from "../components/Voice/VoiceManage.vue";
 import Router from "../router";
-import ProUpgradeView from "../components/common/ProUpgradeView.vue";
-import PageHeader from "../components/PageHeader.vue";
+import { LiveVoiceService } from "../service/VoiceService";
+import LiveEvent from "./Live/LiveEvent.vue";
+import LiveKnowledge from "./Live/LiveKnowledge.vue";
+import LiveTalk from "./Live/LiveTalk.vue";
+import VideoTemplate from "./Video/VideoTemplate.vue";
 
-const tab = ref("");
+const LIVE_TABS = [
+    { value: "console", labelKey: "live.console", icon: "console", color: "text-red-500" },
+    { value: "avatar", labelKey: "live.avatar", icon: "avatar", color: "text-blue-500" },
+    { value: "voice", labelKey: "live.voice", icon: "voice", color: "text-indigo-500" },
+    { value: "knowledge", labelKey: "live.knowledge", icon: "knowledge", color: "text-amber-500" },
+    { value: "event", labelKey: "live.event", icon: "event", color: "text-green-500" },
+    { value: "talk", labelKey: "live.talkHistory", icon: "talk", color: "text-violet-500" },
+] as const;
+
+const tab = ref("knowledge");
 
 const syncTab = () => {
-    tab.value = (Router.currentRoute.value.query.tab as string) || "monitor";
+    const next = Router.currentRoute.value.query.tab as string;
+    tab.value = LIVE_TABS.some((x) => x.value === next) ? next : "console";
 };
 
-onMounted(() => {
-    syncTab();
-});
+// 选中的标签同步到地址栏，刷新或从别处跳转回来时保持一致
+const selectTab = (next: string) => {
+    tab.value = next;
+    if (Router.currentRoute.value.query.tab !== next) {
+        Router.push({ path: "/live", query: { tab: next } }).catch(() => {});
+    }
+};
 
+onMounted(syncTab);
 watch(() => Router.currentRoute.value.query.tab, syncTab);
 </script>
 
 <template>
     <div class="pb-device-container bg-white h-full relative select-none flex">
-        <div
-            class="p-6 w-52 flex-shrink-0 border-r border-solid border-gray-100 overflow-x-hidden overflow-y-auto"
-        >
+        <div class="p-6 w-52 flex-shrink-0 border-r border-solid border-gray-100 overflow-x-hidden overflow-y-auto">
             <div
-                class="p-2 rounded-lg mb-4 cursor-pointer"
-                :class="tab === 'monitor' ? 'bg-gray-200' : ''"
-                @click="tab = 'monitor'"
+                v-for="item in LIVE_TABS"
+                :key="item.value"
+                class="p-2 rounded-lg mb-2 cursor-pointer"
+                :class="tab === item.value ? 'menu-item-active' : ''"
+                @click="selectTab(item.value)"
             >
-                <div class="text-base flex items-center">
-                    <i-mdi-broadcast
-                        class="w-5 h-5 inline-block mr-1 text-rose-500"
-                    />
-                    {{ $t("live.service") }}
-                </div>
-            </div>
-            <div
-                class="p-2 rounded-lg mb-4 cursor-pointer"
-                :class="tab === 'avatar' ? 'bg-gray-200' : ''"
-                @click="tab = 'avatar'"
-            >
-                <div class="text-base flex items-center">
-                    <i-mdi-account-circle
-                        class="w-5 h-5 inline-block mr-1 text-blue-500"
-                    />
-                    {{ $t("live.avatar") }}
-                </div>
-            </div>
-            <div
-                class="p-2 rounded-lg mb-4 cursor-pointer"
-                :class="tab === 'knowledge' ? 'bg-gray-200' : ''"
-                @click="tab = 'knowledge'"
-            >
-                <div class="text-base flex items-center">
-                    <i-mdi-book-open-variant
-                        class="w-5 h-5 inline-block mr-1 text-amber-500"
-                    />
-                    {{ $t("live.knowledge") }}
-                </div>
-            </div>
-            <div
-                class="p-2 rounded-lg mb-4 cursor-pointer"
-                :class="tab === 'event' ? 'bg-gray-200' : ''"
-                @click="tab = 'event'"
-            >
-                <div class="text-base flex items-center">
-                    <i-mdi-chat
-                        class="w-5 h-5 inline-block mr-1 text-emerald-500"
-                    />
-                    {{ $t("live.event") }}
-                </div>
-            </div>
-            <div
-                class="p-2 rounded-lg mb-4 cursor-pointer"
-                :class="tab === 'liveTalk' ? 'bg-gray-200' : ''"
-                @click="tab = 'liveTalk'"
-            >
-                <div class="text-base flex items-center">
-                    <i-mdi-history
-                        class="w-5 h-5 inline-block mr-1 text-violet-500"
-                    />
-                    {{ $t("live.talkHistory") }}
+                <div class="text-base truncate flex items-center">
+                    <i-mdi-broadcast v-if="item.icon === 'console'" class="w-5 h-5 inline-block mr-1" :class="item.color" />
+                    <i-mdi-account-box v-else-if="item.icon === 'avatar'" class="w-5 h-5 inline-block mr-1" :class="item.color" />
+                    <i-mdi-microphone v-else-if="item.icon === 'voice'" class="w-5 h-5 inline-block mr-1" :class="item.color" />
+                    <i-mdi-book-open-variant v-else-if="item.icon === 'knowledge'" class="w-5 h-5 inline-block mr-1" :class="item.color" />
+                    <i-mdi-message-processing v-else-if="item.icon === 'event'" class="w-5 h-5 inline-block mr-1" :class="item.color" />
+                    <i-mdi-history v-else class="w-5 h-5 inline-block mr-1" :class="item.color" />
+                    {{ $t(item.labelKey) }}
                 </div>
             </div>
         </div>
         <div class="flex-grow h-full overflow-y-auto">
-            <div class="p-6">
-                <PageHeader :title="$t('live.title')" />
-                <div style="height: calc(100vh - 10rem)">
-                    <ProUpgradeView />
-                </div>
+            <div v-if="tab === 'console'" class="p-5">
+                <div class="text-3xl font-bold mb-4">{{ $t("live.console") }}</div>
+                <a-alert>{{ $t("live.consoleComing") }}</a-alert>
             </div>
+            <VideoTemplate v-else-if="tab === 'avatar'" />
+            <VoiceManage
+                v-else-if="tab === 'voice'"
+                :service="LiveVoiceService"
+                title-key="live.voice"
+                desc-key="live.voiceDesc"
+                test-prefix="LiveVoice"
+            />
+            <LiveKnowledge v-else-if="tab === 'knowledge'" />
+            <LiveEvent v-else-if="tab === 'event'" />
+            <LiveTalk v-else-if="tab === 'talk'" />
         </div>
     </div>
 </template>
-
-<style scoped></style>

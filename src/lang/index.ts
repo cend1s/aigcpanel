@@ -80,6 +80,8 @@ import assetsEnUS from "../pages/Assets/lang/en-US.json";
 import assetsZhCN from "../pages/Assets/lang/zh-CN.json";
 import ecomCopyEnUS from "../pages/Apps/EcomCopy/lang/en-US.json";
 import ecomCopyZhCN from "../pages/Apps/EcomCopy/lang/zh-CN.json";
+import liveEnUS from "../pages/Live/locales/en-US.json";
+import liveZhCN from "../pages/Live/locales/zh-CN.json";
 
 let localeInit = false;
 export const defaultLocale = "zh-CN";
@@ -126,6 +128,7 @@ export const messageList = [
             ...ecomCopyEnUS,
             ...clipMatrixEnUS,
             ...assetsEnUS,
+            ...liveEnUS,
         },
     },
     {
@@ -169,6 +172,7 @@ export const messageList = [
             ...ecomCopyZhCN,
             ...clipMatrixZhCN,
             ...assetsZhCN,
+            ...liveZhCN,
         },
     },
 ];

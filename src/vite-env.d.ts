@@ -2,9 +2,10 @@
 import type { Router } from "vue-router";
 
 declare const __BUILD_ID__: string;
-declare const __ECOM_VERSION__: string;
 
 declare global {
+    // 构建时注入的电商版版本号（vite.config.ts 的 define）
+    const __ECOM_VERSION__: string;
     interface Window {
         __test?: import("./utils/test").TestRegistry;
     }

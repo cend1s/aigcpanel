@@ -18,6 +18,7 @@ const activeTab = computed(() => {
     if (path === "/video") return "video";
     if (path === "/tool") return "tool";
     if (path === "/assets") return "assets";
+    if (path === "/live") return "live";
 });
 
 const userTip = computed(() => {
@@ -99,6 +100,17 @@ const doUser = async () => {
                     <i-mdi-account-circle-outline class="text-xl" />
                 </div>
                 <div class="text-sm truncate">{{ $t("nav.video") }}</div>
+            </a>
+            <a
+                class="page-nav-item block text-center py-3"
+                :class="activeTab === 'live' ? 'active' : ''"
+                @click="$router.push('/live')"
+                href="javascript:;"
+            >
+                <div class="flex justify-center">
+                    <i-mdi-broadcast class="text-xl" />
+                </div>
+                <div class="text-sm truncate">{{ $t("nav.live") }}</div>
             </a>
             <a
                 class="page-nav-item block text-center py-3"

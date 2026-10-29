@@ -11,6 +11,7 @@ const routes = [
                 path: "video",
                 component: () => import("./pages/Video.vue"),
             },
+            { path: "live", component: () => import("./pages/Live.vue") },
             { path: "server", component: () => import("./pages/Server.vue") },
             { path: "tool", component: () => import("./pages/Tool.vue") },
             { path: "assets", component: () => import("./pages/Assets/AssetCenter.vue") },
