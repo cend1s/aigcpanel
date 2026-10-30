@@ -123,5 +123,13 @@
     "live.monitorOpen": "Open monitor",
     "live.monitorReopen": "Reopen",
     "live.monitorCount": "{count} interactions received",
-    "live.monitorNotLive": "Not live yet: interactions are recorded but not answered"
+    "live.monitorNotLive": "Not live yet: interactions are recorded but not answered",
+    "live.llmReply": "Answer unmatched comments with an LLM",
+    "live.llmReplyHint": "Answers from the knowledge base; replies are checked against banned words and unknown facts are not invented",
+    "live.llmModel": "LLM",
+    "live.llmModelHint": "Configure an LLM in Settings first",
+    "live.llmCooldown": "Min reply gap",
+    "live.llmPrompt": "Reply prompt",
+    "live.llmVarKnowledge": "Live material (built from the knowledge base)",
+    "live.checkLlmModel": "LLM replies are on; select an LLM (configure one in Settings first)"
 }

@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import PageHeader from "../../components/PageHeader.vue";
+import ModelSelector from "../../module/Model/ModelSelector.vue";
+import ModelPromptDataConfigButton from "../../module/Model/ModelPromptDataConfigButton.vue";
+import { LiveLlmReplyPrompt, LiveLlmReplySystemPrompt } from "./config/llmReply";
 import { t } from "../../lang";
 import { Dialog } from "../../lib/dialog";
 import Router from "../../router";
@@ -223,6 +226,37 @@ const goTab = (tab: string) => Router.push({ path: "/live", query: { tab } });
                         <a-input-number v-model="s.flowTalkDelayMax" :min="0" :max="600" style="width: 110px" />
                         <span class="ml-2 text-gray-500">{{ $t("live.seconds") }}</span>
                     </a-form-item>
+                    <a-form-item :label="$t('live.llmReply')">
+                        <a-switch v-model="s.llmEnabled" />
+                        <template #extra>{{ $t("live.llmReplyHint") }}</template>
+                    </a-form-item>
+                    <template v-if="s.llmEnabled">
+                        <a-form-item :label="$t('live.llmModel')">
+                            <ModelSelector v-model="s.llmModel" />
+                            <template #extra>{{ $t("live.llmModelHint") }}</template>
+                        </a-form-item>
+                        <div class="flex gap-4">
+                            <a-form-item :label="$t('live.llmCooldown')" class="flex-grow">
+                                <a-input-number v-model="s.llmCooldownSecond" :min="0" :max="300">
+                                    <template #suffix>{{ $t("live.seconds") }}</template>
+                                </a-input-number>
+                            </a-form-item>
+                            <a-form-item :label="$t('live.llmPrompt')" class="flex-grow">
+                                <ModelPromptDataConfigButton
+                                    :title="$t('live.llmPrompt')"
+                                    name="LiveLlmReplyPrompt"
+                                    :default-prompt="LiveLlmReplyPrompt"
+                                    :default-system-prompt="LiveLlmReplySystemPrompt"
+                                    enable-system-prompt
+                                    :param="[
+                                        { name: 'knowledge', label: $t('live.llmVarKnowledge') },
+                                        { name: 'username', label: $t('live.nickname') },
+                                        { name: 'comment', label: $t('live.commentContent') },
+                                    ]"
+                                />
+                            </a-form-item>
+                        </div>
+                    </template>
                     <div class="flex gap-4">
                         <a-form-item :label="$t('live.defaultUsername')" class="flex-grow">
                             <a-input v-model="s.defaultUsername" :max-length="10" />

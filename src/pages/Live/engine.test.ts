@@ -159,3 +159,68 @@ test("有循环口播在等待间隔时，新来的互动先播", async () => {
     assert.equal(h.played[0].source, "flowTalk");
     assert.equal(h.played[1].source, "user");
 });
+
+const llmKb = kb.filter((k) => k.content.type === "user");
+
+const withChat = (chat: (c: string, u: string) => Promise<string>, config: any = {}) => {
+    const h = harness();
+    (h.engine as any).deps.chat = chat;
+    h.engine.setKnowledge(llmKb);
+    h.engine.setConfig({ llmEnabled: true, llmCooldownSecond: 0, ...config });
+    return h;
+};
+
+test("大模型兜底：评论没命中关键词时回复；命中关键词的不走大模型", async () => {
+    const asked: string[] = [];
+    const h = withChat(async (c) => (asked.push(c), `回复${c}`));
+    h.engine.start();
+    h.engine.onEvent({ type: "Comment", username: "小王", content: "发什么快递" });
+    h.engine.onEvent({ type: "Comment", username: "小李", content: "多少钱" });
+    await h.until(() => h.played.length >= 2);
+    await h.engine.stop();
+    assert.deepEqual(asked, ["发什么快递"]);
+    assert.deepEqual(h.played.map((p) => [p.source, p.text]).sort(), [["llm", "回复发什么快递"], ["user", "小李，价格看一号链接"]].sort());
+});
+
+test("大模型兜底：默认关闭；太短的评论、冷却内的评论、同时进行中的评论都忽略", async () => {
+    let n = 0;
+    const off = withChat(async () => (n++, "x"), { llmEnabled: false });
+    off.engine.start();
+    off.engine.onEvent({ type: "Comment", username: "a", content: "发什么快递" });
+    await off.engine.stop();
+    assert.equal(n, 0);
+
+    let release!: () => void;
+    const slow = withChat(() => new Promise<string>((r) => (release = () => r("好的"))), { llmCooldownSecond: 60 });
+    slow.engine.start();
+    slow.engine.onEvent({ type: "Comment", username: "a", content: "?" }); // 太短
+    slow.engine.onEvent({ type: "Comment", username: "a", content: "什么时候发货" });
+    slow.engine.onEvent({ type: "Comment", username: "b", content: "有优惠券吗" }); // 进行中
+    release();
+    await slow.until(() => slow.played.length >= 1);
+    slow.engine.onEvent({ type: "Comment", username: "c", content: "能退货吗" }); // 冷却内
+    await slow.engine.stop();
+    assert.deepEqual(slow.played.map((p) => p.text), ["好的"]);
+});
+
+test("大模型兜底：回复含违禁词丢弃；失败与超时给出提示，不影响后续", async () => {
+    const h = withChat(async (c) => (c.includes("坏") ? "我们是全网最低价" : c.includes("错") ? Promise.reject(new Error("api down")) : "好的呢"));
+    h.engine.start();
+    h.engine.onEvent({ type: "Comment", username: "a", content: "这是坏评论" });
+    await h.until(() => h.warns.some((w) => w.includes("违禁词")));
+    h.engine.onEvent({ type: "Comment", username: "b", content: "这是错评论" });
+    await h.until(() => h.warns.some((w) => w.includes("api down")));
+    h.engine.onEvent({ type: "Comment", username: "c", content: "正常的问题" });
+    await h.until(() => h.played.length >= 1);
+    await h.engine.stop();
+    assert.deepEqual(h.played.map((p) => p.text), ["好的呢"]);
+});
+
+test("大模型兜底：返回空串（SKIP）不播报", async () => {
+    const h = withChat(async () => "");
+    h.engine.start();
+    h.engine.onEvent({ type: "Comment", username: "a", content: "你们是骗子" });
+    await new Promise((r) => setTimeout(r, 30));
+    await h.engine.stop();
+    assert.equal(h.played.length, 0);
+});

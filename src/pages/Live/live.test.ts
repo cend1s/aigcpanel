@@ -75,3 +75,22 @@ test("本地路径转 file 地址：Windows 盘符、空格与中文", async () 
     assert.equal(toFileUrl("https://x/a.mp3"), "https://x/a.mp3");
     assert.equal(toFileUrl("/tmp/第#1?.wav"), "file:///tmp/%E7%AC%AC%231%3F.wav");
 });
+
+test("大模型回复整理：去 Markdown/思考标签、SKIP 判空、超长截到完整句子", async () => {
+    const { cleanLlmReply, buildKnowledgeContext, fillLlmPrompt } = await import("./config/llmReply.js");
+    assert.equal(cleanLlmReply("<think>想一下</think>**包邮哦**，\n48小时发货"), "包邮哦， 48小时发货");
+    assert.equal(cleanLlmReply("SKIP"), "");
+    assert.equal(cleanLlmReply("  "), "");
+    assert.equal(cleanLlmReply("「好的呢」"), "好的呢");
+    const long = "这款保温杯保温十二小时。" + "非常好用".repeat(30);
+    assert.equal(cleanLlmReply(long, 40).length <= 40, true);
+    assert.equal(cleanLlmReply("这款杯子保温十二小时，一键开盖超方便。后面还有很多很多很多很多很多很多很多很多内容", 30), "这款杯子保温十二小时，一键开盖超方便。");
+    const ctx = buildKnowledgeContext([
+        { content: { type: "flowTalk", reply: "保温十二小时" } },
+        { content: { type: "user", keywords: "多少钱,价格", reply: "看一号链接" } },
+        { content: { type: "system", reply: "欢迎" } },
+    ]);
+    assert.equal(ctx, "- 保温十二小时\n- 关于「多少钱、价格」看一号链接");
+    assert.equal(buildKnowledgeContext([]), "（暂无资料）");
+    assert.equal(fillLlmPrompt("{username}问：{comment}{x}", { username: "小王", comment: "多少钱" }), "小王问：多少钱{x}");
+});

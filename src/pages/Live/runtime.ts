@@ -6,6 +6,9 @@ import { StorageService } from "../../service/StorageService";
 import { VideoTemplateService } from "../../service/VideoTemplateService";
 import { LiveVoiceService } from "../../service/VoiceService";
 import { loadBlackWords } from "./config/blackWord";
+import { buildKnowledgeContext, cleanLlmReply, fillLlmPrompt, LiveLlmReplyPrompt, LiveLlmReplySystemPrompt } from "./config/llmReply";
+import { getDataContent } from "../../components/common/dataConfig";
+import { useModelStore } from "../../module/Model/store/model";
 import { buildDouyinMonitorScript, normalizeDouyinRoomUrl } from "./douyin";
 import { DEFAULT_ENGINE_CONFIG, KnowledgeRecord, LiveEngine, LiveViewerEvent, TalkItem } from "./engine";
 
@@ -32,6 +35,11 @@ export type LiveConsoleSettings = {
     enterIgnoreSecond: number;
     /** 抖音直播间地址 */
     liveRoomUrl: string;
+    /** 评论没命中关键词时用大模型回复（需要在设置里配置大模型） */
+    llmEnabled: boolean;
+    /** 大模型，格式「供应商id|模型id」 */
+    llmModel: string;
+    llmCooldownSecond: number;
 };
 
 const DEFAULT_SETTINGS: LiveConsoleSettings = {
@@ -47,6 +55,9 @@ const DEFAULT_SETTINGS: LiveConsoleSettings = {
     defaultUsername: DEFAULT_ENGINE_CONFIG.defaultUsername,
     enterIgnoreSecond: DEFAULT_ENGINE_CONFIG.enterIgnoreSecond,
     liveRoomUrl: "",
+    llmEnabled: false,
+    llmModel: "",
+    llmCooldownSecond: DEFAULT_ENGINE_CONFIG.llmCooldownSecond,
 };
 
 export const liveRuntime = reactive({
@@ -119,6 +130,15 @@ const engine = new LiveEngine({
     release: async (item) => {
         if (item.audio) await window.$mapi.file.deletes(item.audio);
     },
+    chat: async (comment, username, knowledge) => {
+        const [providerId, modelId] = (liveRuntime.settings.llmModel || "|").split("|");
+        const tpl = await getDataContent("LiveLlmReplyPrompt", LiveLlmReplyPrompt);
+        const system = await getDataContent("LiveLlmReplyPromptSystem", LiveLlmReplySystemPrompt);
+        const prompt = fillLlmPrompt(tpl, { knowledge: buildKnowledgeContext(knowledge), username, comment });
+        const ret = await useModelStore().chat(providerId, modelId, prompt, { systemPrompt: system });
+        if (ret.code) throw new Error(ret.msg || "大模型调用失败");
+        return cleanLlmReply(ret.data?.content ?? "");
+    },
     blackWords: () => blackWords,
     now: () => Date.now(),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
@@ -150,6 +170,8 @@ const applyEngineSettings = () => {
         flowTalkDelayMax: s.flowTalkDelayMax,
         defaultUsername: s.defaultUsername,
         enterIgnoreSecond: s.enterIgnoreSecond,
+        llmEnabled: s.llmEnabled && !!s.llmModel,
+        llmCooldownSecond: s.llmCooldownSecond,
     });
 };
 
@@ -163,6 +185,7 @@ export const liveCheck = async () => {
     if (!enabled.some((r) => r.content?.type === "flowTalk")) problems.push("live.checkFlowTalk");
     if (s.display === "avatar" && !s.avatarId) problems.push("live.checkAvatar");
     if (s.display === "videos" && !enabled.some((r) => r.content?.type === "flowVideo")) problems.push("live.checkVideos");
+    if (s.llmEnabled && !s.llmModel) problems.push("live.checkLlmModel");
     return problems;
 };
 

@@ -62,6 +62,12 @@ export type LiveEngineConfig = {
     defaultUsername: string;
     /** 同一观众多久内重复进入不再欢迎（秒） */
     enterIgnoreSecond: number;
+    /** 评论没命中关键词时用大模型回复 */
+    llmEnabled: boolean;
+    /** 两次大模型回复之间的最短间隔（秒）：评论很密时只挑着回，也控制调用成本 */
+    llmCooldownSecond: number;
+    /** 等待大模型回复的最长时间（秒），超时放弃，免得回复过时 */
+    llmTimeoutSecond: number;
 };
 
 export const DEFAULT_ENGINE_CONFIG: LiveEngineConfig = {
@@ -70,6 +76,9 @@ export const DEFAULT_ENGINE_CONFIG: LiveEngineConfig = {
     flowTalkDelayMax: 8,
     defaultUsername: "宝子",
     enterIgnoreSecond: 120,
+    llmEnabled: false,
+    llmCooldownSecond: 8,
+    llmTimeoutSecond: 15,
 };
 
 /** 同类系统事件的全局冷却（毫秒）：点赞等事件很密集，避免刷屏式播报 */
@@ -93,6 +102,8 @@ export type LiveEngineDeps = {
     play: (item: TalkItem) => Promise<void>;
     /** 播放完的音频可以清理 */
     release?: (item: TalkItem) => Promise<void>;
+    /** 大模型回复：返回要播报的话，空串表示不回复；抛异常会被记为提示 */
+    chat?: (comment: string, username: string, knowledge: KnowledgeRecord[]) => Promise<string>;
     blackWords: () => string[];
     now: () => number;
     sleep: (ms: number) => Promise<void>;
@@ -119,6 +130,8 @@ export class LiveEngine {
     private lastTalkOf = new Map<number, string>();
     private enterAt = new Map<string, number>();
     private systemAt = new Map<string, number>();
+    private llmBusy = false;
+    private llmAt = 0;
     private loops: Promise<void>[] = [];
 
     constructor(private deps: LiveEngineDeps) {}
@@ -177,7 +190,10 @@ export class LiveEngine {
         const trigger = `${username || this.config.defaultUsername}${e.content ? `：${e.content}` : ""}`;
         if (e.type === "Comment") {
             const hit = matchUserKnowledge(String(e.content ?? ""), this.knowledge);
-            if (!hit) return;
+            if (!hit) {
+                void this.askLlm(String(e.content ?? ""), username, trigger);
+                return;
+            }
             const talk = this.pickTalk(hit, vars);
             if (talk) this.enqueue("user", talk, trigger);
             return;
@@ -203,6 +219,39 @@ export class LiveEngine {
     }
 
     // ── 内部 ────────────────────────────────────────────
+
+    /** 评论没命中关键词：交给大模型。同一时间只处理一条，间隔内的评论直接忽略 */
+    private async askLlm(comment: string, username: string, trigger: string) {
+        const { chat } = this.deps;
+        const text = comment.trim();
+        if (!this.config.llmEnabled || !chat || text.length < 2) return;
+        const now = this.deps.now();
+        if (this.llmBusy || now - this.llmAt < this.config.llmCooldownSecond * 1000) return;
+        this.llmBusy = true;
+        this.llmAt = now;
+        try {
+            let timer: any;
+            const reply = await Promise.race([
+                chat(text, username || this.config.defaultUsername, this.knowledge),
+                new Promise<string>((_r, reject) => {
+                    timer = setTimeout(() => reject(new Error("大模型回复超时")), this.config.llmTimeoutSecond * 1000);
+                }),
+            ]).finally(() => clearTimeout(timer));
+            if (!this.running) return;
+            const clean = String(reply ?? "").trim();
+            if (!clean) return;
+            const bad = this.blackWordsIn(clean);
+            if (bad.length) {
+                this.deps.onWarn?.(`大模型回复含违禁词「${bad.join("、")}」，已丢弃：${clean}`);
+                return;
+            }
+            this.enqueue("llm", clean, trigger);
+        } catch (e: any) {
+            this.deps.onWarn?.(`大模型回复失败：${String(e?.message ?? e)}`);
+        } finally {
+            this.llmBusy = false;
+        }
+    }
 
     private changed() {
         this.deps.onChange?.();
